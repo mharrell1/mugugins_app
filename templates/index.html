@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Froggy Pomodoro - Study, Relax & Hop</title>
+    <meta name="description" content="A cute, cozy frog-themed Pomodoro timer and task manager integrated with Spotify to help you stay focused and productive.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Outfit:wght@100..900&family=Quicksand:wght@300..700&display=swap" rel="stylesheet">
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/study_frog.jpg') }}">
+</head>
+<body>
+    <!-- Animated Pond Background -->
+    <div class="pond-bg">
+        <div class="water-ripple ripple-1"></div>
+        <div class="water-ripple ripple-2"></div>
+        <div class="water-ripple ripple-3"></div>
+        <div class="floating-lilypad pad-1"></div>
+        <div class="floating-lilypad pad-2"></div>
+        <div class="floating-lilypad pad-3"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-logo">
+                <span class="logo-emoji">🐸</span>
+                <h1>Froggy Pomodoro</h1>
+            </div>
+            <p class="tagline">Hop your way to productivity with Lily the study frog!</p>
+        </header>
+
+        <!-- Main Layout Grid -->
+        <main class="app-grid">
+            
+            <!-- Left Panel: Pomodoro Timer -->
+            <section class="panel timer-panel" id="timer-section">
+                <div class="panel-header">
+                    <h2>⏰ Pond Timer</h2>
+                </div>
+                
+                <div class="timer-settings">
+                    <div class="settings-group">
+                        <label for="work-sessions-input">Work Sessions</label>
+                        <div class="number-control">
+                            <button type="button" class="btn-step" onclick="adjustCount('work-sessions-input', -1)">-</button>
+                            <input type="number" id="work-sessions-input" value="4" min="1" max="10">
+                            <button type="button" class="btn-step" onclick="adjustCount('work-sessions-input', 1)">+</button>
+                        </div>
+                    </div>
+                    <div class="settings-group">
+                        <label for="session-length">Work Duration (min)</label>
+                        <input type="number" id="session-length" value="25" min="1" max="60" class="time-duration-input">
+                    </div>
+                    <div class="settings-group">
+                        <label for="break-length">Break Duration (min)</label>
+                        <input type="number" id="break-length" value="5" min="1" max="30" class="time-duration-input">
+                    </div>
+                </div>
+
+                <div class="timer-display-container">
+                    <svg class="progress-ring" width="220" height="220">
+                        <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.05)" stroke-width="8" fill="transparent" r="98" cx="110" cy="110" />
+                        <circle class="progress-ring__circle" stroke="#87c38f" stroke-width="8" fill="transparent" r="98" cx="110" cy="110" />
+                    </svg>
+                    <div class="timer-info">
+                        <span id="timer-state">Focus</span>
+                        <div id="timer-countdown">25:00</div>
+                        <span id="session-counter">Session 1 of 4</span>
+                    </div>
+                </div>
+
+                <div class="timer-controls">
+                    <button id="btn-timer-toggle" class="btn btn-primary" onclick="toggleTimer()">
+                        <svg class="btn-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
+                        <span>Start</span>
+                    </button>
+                    <button id="btn-timer-reset" class="btn btn-secondary" onclick="resetTimer()">
+                        <svg class="btn-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                        <span>Reset</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Center Panel: The Mascot/Lily Pad -->
+            <section class="panel mascot-panel" id="mascot-section">
+                <div class="mascot-wrapper">
+                    <!-- Audio notes decoration -->
+                    <div class="music-note note-1">🎵</div>
+                    <div class="music-note note-2">🎶</div>
+                    <div class="music-note note-3">🐸</div>
+                    
+                    <div class="frog-headphone-container">
+                        <img src="{{ url_for('static', filename='images/study_frog.jpg') }}" alt="Lily the Study Frog" class="frog-img" id="frog-mascot-img">
+                        <!-- Headphone overlay that becomes visible/animates when music is playing -->
+                        <div class="headphones-overlay" id="headphones-overlay">🎧</div>
+                    </div>
+                    
+                    <div class="lily-speech-bubble" id="lily-speech">
+                        <p id="bubble-text">Hi there! Let's get cozy and study together. Choose some music to start!</p>
+                    </div>
+
+                    <div class="ambient-sounds-control">
+                        <h3>🌿 Pond Atmosphere</h3>
+                        <div class="ambient-buttons">
+                            <button class="btn btn-ambient" id="ambient-rain" onclick="toggleAmbient('rain')">🌧️ Rain</button>
+                            <button class="btn btn-ambient" id="ambient-forest" onclick="toggleAmbient('forest')">🌳 Forest</button>
+                            <button class="btn btn-ambient" id="ambient-pond" onclick="toggleAmbient('pond')">🐸 Ribbits</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Tasks List -->
+            <section class="panel tasks-panel" id="tasks-section">
+                <div class="panel-header">
+                    <h2>📋 Tasks to Hop On</h2>
+                    <span class="task-stats" id="task-stats">0/0 completed</span>
+                </div>
+                
+                <form id="todo-form" onsubmit="handleAddTask(event)">
+                    <div class="task-input-wrapper">
+                        <input type="text" id="task-input" placeholder="Type a task to complete..." autocomplete="off" required>
+                        <button type="submit" class="btn btn-add" id="btn-add-task">
+                            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                        </button>
+                    </div>
+                </form>
+
+                <div class="todo-list-container">
+                    <ul id="todo-list" class="todo-list">
+                        <!-- Tasks dynamically populated here -->
+                    </ul>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Panel: Spotify Player & Curated Playlists -->
+        <footer class="panel spotify-panel" id="spotify-section">
+            <div class="spotify-header">
+                <div class="spotify-title-group">
+                    <svg class="spotify-logo" viewBox="0 0 24 24" width="24" height="24"><path fill="#1DB954" d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424c-.18.295-.563.387-.857.207-2.377-1.454-5.37-1.782-8.894-.978-.335.077-.668-.13-.746-.465-.077-.336.13-.67.466-.747 3.844-.88 7.14-.5 9.825 1.14.293.18.385.563.206.857zm1.225-2.72c-.226.367-.707.487-1.074.26-2.72-1.672-6.87-2.157-10.082-1.182-.413.125-.847-.107-.972-.52-.125-.413.108-.847.52-.972 3.67-1.114 8.243-.574 11.35 1.34.366.226.486.708.258 1.074zm.105-2.83C14.502 8.87 9.016 8.685 5.832 9.65c-.487.147-.998-.125-1.147-.61-.148-.488.125-.998.61-1.147 3.655-1.11 9.7-.9 13.626 1.43.438.26.58.825.32 1.263-.26.438-.825.58-1.263.32z"/></svg>
+                    <h2>Froggy Pond Radio</h2>
+                </div>
+                <div class="spotify-url-input">
+                    <input type="text" id="spotify-link-input" placeholder="Paste Spotify link (playlist, album, track)...">
+                    <button class="btn btn-secondary" onclick="loadCustomSpotify()">Load Link</button>
+                </div>
+            </div>
+
+            <div class="spotify-body">
+                <div class="curated-playlists">
+                    <h3>📻 Curated Stations</h3>
+                    <div class="playlists-grid">
+                        <button class="playlist-btn active" data-spotify-uri="embed/playlist/37i9dQZF1DX8U7rxhURT67" onclick="playCurated(this)">
+                            <span class="playlist-icon">🎧</span>
+                            <div class="playlist-meta">
+                                <span class="playlist-name">Lofi Focus Beats</span>
+                                <span class="playlist-desc">Cozy studying beats</span>
+                            </div>
+                        </button>
+                        <button class="playlist-btn" data-spotify-uri="embed/playlist/37i9dQZF1DX4sWSpwq3LiO" onclick="playCurated(this)">
+                            <span class="playlist-icon">🎹</span>
+                            <div class="playlist-meta">
+                                <span class="playlist-name">Peaceful Piano</span>
+                                <span class="playlist-desc">Beautiful classical & modern piano</span>
+                            </div>
+                        </button>
+                        <button class="playlist-btn" data-spotify-uri="embed/playlist/37i9dQZF1DX0D7589Vb26G" onclick="playCurated(this)">
+                            <span class="playlist-icon">🌧️</span>
+                            <div class="playlist-meta">
+                                <span class="playlist-name">Nature Rain Sounds</span>
+                                <span class="playlist-desc">Relaxing storm & forest noise</span>
+                            </div>
+                        </button>
+                        <button class="playlist-btn" data-spotify-uri="embed/playlist/0tM1rL0Qj6J1Wq5r2b03Jb" onclick="playCurated(this)">
+                            <span class="playlist-icon">🕹️</span>
+                            <div class="playlist-meta">
+                                <span class="playlist-name">Nintendo & Chill</span>
+                                <span class="playlist-desc">Nostalgic cozy game tunes</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="spotify-iframe-container">
+                    <iframe id="spotify-player" 
+                            src="https://open.spotify.com/embed/playlist/37i9dQZF1DX8U7rxhURT67?utm_source=generator&theme=0" 
+                            width="100%" 
+                            height="152" 
+                            frameBorder="0" 
+                            allowfullscreen="" 
+                            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                            loading="lazy">
+                    </iframe>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Hidden audio tags for synthesised sounds or backup ambient audios -->
+    <audio id="sound-rain" loop src="https://assets.mixkit.co/active_storage/sfx/2521/2521-84.wav"></audio> <!-- Rain placeholder/simple audio loop -->
+    <audio id="sound-forest" loop src="https://assets.mixkit.co/active_storage/sfx/1233/1233-84.wav"></audio>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
