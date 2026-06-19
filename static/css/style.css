@@ -1,0 +1,938 @@
+/* Cozy Frog-Themed Design Tokens & Variables */
+:root {
+    --bg-dark: #12221e;
+    --bg-light: #1c332e;
+    --panel-bg: rgba(30, 53, 47, 0.7);
+    --panel-border: rgba(135, 195, 143, 0.25);
+    
+    --color-sage: #87c38f;
+    --color-mint: #b2dbb7;
+    --color-emerald: #226f54;
+    --color-cream: #f4ebd9;
+    --color-text-dim: rgba(244, 235, 217, 0.7);
+    --color-accent-orange: #f29e4c;
+    --color-shadow: rgba(0, 0, 0, 0.3);
+
+    --font-heading: 'Fredoka', sans-serif;
+    --font-body: 'Outfit', sans-serif;
+    --font-timer: 'Outfit', monospace;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+    font-family: var(--font-body);
+    background-color: var(--bg-dark);
+    color: var(--color-cream);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow-x: hidden;
+    padding: 20px;
+}
+
+/* Background Ripples & Floating Lily Pads */
+.pond-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at 50% 50%, var(--bg-light) 0%, var(--bg-dark) 100%);
+    z-index: -2;
+    overflow: hidden;
+}
+
+.water-ripple {
+    position: absolute;
+    border: 1px solid rgba(135, 195, 143, 0.08);
+    border-radius: 50%;
+    animation: ripple 12s infinite linear;
+    transform: translate(-50%, -50%);
+}
+
+.ripple-1 {
+    width: 600px;
+    height: 600px;
+    top: 20%;
+    left: 15%;
+    animation-duration: 16s;
+}
+
+.ripple-2 {
+    width: 900px;
+    height: 900px;
+    top: 75%;
+    left: 80%;
+    animation-duration: 20s;
+}
+
+.ripple-3 {
+    width: 400px;
+    height: 400px;
+    top: 45%;
+    left: 50%;
+    animation-duration: 10s;
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0.8) rotate(0deg);
+        opacity: 0.2;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(1.3) rotate(360deg);
+        opacity: 0.1;
+    }
+}
+
+.floating-lilypad {
+    position: absolute;
+    background: radial-gradient(circle at 30% 30%, rgba(34, 111, 84, 0.15), rgba(18, 50, 38, 0.25));
+    border-radius: 50%;
+    border-left: 4px solid rgba(135, 195, 143, 0.05);
+    z-index: -1;
+}
+
+/* Simple notch representing typical lily pad gap */
+.floating-lilypad::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 50%;
+    width: 50%;
+    height: 50%;
+    background-color: var(--bg-dark);
+    clip-path: polygon(100% 100%, 0 0, 100% 0);
+    opacity: 0.95;
+    transform: rotate(-15deg);
+}
+
+.pad-1 {
+    width: 180px;
+    height: 180px;
+    top: 10%;
+    left: 7%;
+    animation: floatPad 12s ease-in-out infinite;
+}
+
+.pad-2 {
+    width: 280px;
+    height: 270px;
+    bottom: 12%;
+    right: 5%;
+    animation: floatPad 18s ease-in-out infinite alternate;
+}
+
+.pad-3 {
+    width: 120px;
+    height: 120px;
+    bottom: 40%;
+    left: 40%;
+    animation: floatPad 10s ease-in-out infinite alternate;
+}
+
+@keyframes floatPad {
+    0% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(3deg); }
+    100% { transform: translateY(0) rotate(0deg); }
+}
+
+/* Glassmorphism Panel Template */
+.panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 24px;
+    padding: 24px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 12px 40px var(--color-shadow);
+    transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.panel:hover {
+    border-color: rgba(135, 195, 143, 0.4);
+}
+
+/* Container Structure */
+.app-container {
+    max-width: 1200px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.app-header {
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.header-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.logo-emoji {
+    font-size: 2.5rem;
+    animation: frogBob 2s infinite ease-in-out;
+}
+
+@keyframes frogBob {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-6px) scale(1.05); }
+}
+
+.app-header h1 {
+    font-family: var(--font-heading);
+    font-size: 2.8rem;
+    color: var(--color-cream);
+    text-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    letter-spacing: 0.5px;
+}
+
+.app-header .tagline {
+    font-size: 1.1rem;
+    color: var(--color-sage);
+    font-weight: 300;
+    margin-top: 4px;
+}
+
+/* Main App Grid Layout */
+.app-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr 1.1fr;
+    gap: 24px;
+    align-items: stretch;
+}
+
+@media (max-width: 900px) {
+    .app-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 14px;
+    margin-bottom: 20px;
+}
+
+.panel-header h2 {
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--color-mint);
+}
+
+/* Pomodoro Settings */
+.timer-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.settings-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.15);
+    padding: 8px 16px;
+    border-radius: 12px;
+}
+
+.settings-group label {
+    font-size: 0.9rem;
+    color: var(--color-text-dim);
+    font-weight: 500;
+}
+
+.number-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-step {
+    background: rgba(135, 195, 143, 0.2);
+    color: var(--color-mint);
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.btn-step:hover {
+    background: rgba(135, 195, 143, 0.4);
+}
+
+.btn-step:active {
+    transform: scale(0.9);
+}
+
+.number-control input[type="number"], .time-duration-input {
+    width: 50px;
+    text-align: center;
+    background: transparent;
+    border: none;
+    color: var(--color-cream);
+    font-family: var(--font-body);
+    font-size: 1.1rem;
+    font-weight: 600;
+    outline: none;
+}
+
+/* Chrome, Safari, Edge, Opera spinbutton removal */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Firefox spinbutton removal */
+input[type=number] {
+    -moz-appearance: textfield;
+}
+
+/* Timer Display Circular Progress */
+.timer-display-container {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    margin: 0 auto 24px auto;
+}
+
+.progress-ring {
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+}
+
+.progress-ring__circle {
+    stroke-dasharray: 615.75;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 0.35s;
+    transform-origin: 50% 50%;
+    stroke-linecap: round;
+}
+
+.timer-info {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+}
+
+#timer-state {
+    font-size: 0.9rem;
+    font-family: var(--font-heading);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--color-sage);
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+#timer-countdown {
+    font-family: var(--font-timer);
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--color-cream);
+    text-shadow: 0 0 10px rgba(135,195,143,0.3);
+}
+
+#session-counter {
+    font-size: 0.85rem;
+    color: var(--color-text-dim);
+    margin-top: 4px;
+}
+
+/* Buttons Styling */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    border-radius: 14px;
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 12px 20px;
+}
+
+.btn-icon {
+    width: 18px;
+    height: 18px;
+}
+
+.btn-primary {
+    background: var(--color-emerald);
+    color: var(--color-cream);
+    box-shadow: 0 4px 15px rgba(34, 111, 84, 0.4);
+}
+
+.btn-primary:hover {
+    background: #2a8b69;
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--color-mint);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+.timer-controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+/* Center Panel: Mascot Styling */
+.mascot-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+}
+
+.mascot-wrapper {
+    position: relative;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.frog-headphone-container {
+    position: relative;
+    width: 190px;
+    height: 190px;
+    margin-bottom: 24px;
+}
+
+.frog-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 4px solid var(--color-sage);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    animation: breathing 4s ease-in-out infinite;
+}
+
+/* Headphone Overlay */
+.headphones-overlay {
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%) scale(0);
+    font-size: 13.5rem; /* Large enough to wrap the frog image circular boundaries */
+    pointer-events: none;
+    opacity: 0;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    line-height: 1;
+}
+
+/* Head bob animation active when Spotify plays */
+.frog-headphone-container.music-playing .frog-img {
+    animation: headBob 0.8s ease-in-out infinite alternate;
+}
+
+.frog-headphone-container.music-playing .headphones-overlay {
+    transform: translateX(-50%) scale(1.08);
+    opacity: 0.9;
+    font-size: 13rem;
+}
+
+@keyframes headBob {
+    0% { transform: translateY(0) rotate(0deg); }
+    100% { transform: translateY(-8px) rotate(3deg); }
+}
+
+@keyframes breathing {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+}
+
+/* Floating Music Notes */
+.music-note {
+    position: absolute;
+    font-size: 1.5rem;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.frog-headphone-container.music-playing ~ .note-1 {
+    animation: floatNote 3s ease-in-out infinite;
+    left: 20%;
+    top: 10%;
+}
+
+.frog-headphone-container.music-playing ~ .note-2 {
+    animation: floatNote 3.5s ease-in-out infinite;
+    animation-delay: 1s;
+    right: 20%;
+    top: 15%;
+}
+
+.frog-headphone-container.music-playing ~ .note-3 {
+    animation: floatNote 4s ease-in-out infinite;
+    animation-delay: 1.8s;
+    left: 45%;
+    top: 5%;
+}
+
+@keyframes floatNote {
+    0% { transform: translateY(20px) scale(0.6) rotate(0deg); opacity: 0; }
+    50% { opacity: 0.8; }
+    100% { transform: translateY(-60px) scale(1.2) rotate(20deg); opacity: 0; }
+}
+
+/* Speech Bubble */
+.lily-speech-bubble {
+    position: relative;
+    background: var(--color-cream);
+    color: var(--bg-dark);
+    padding: 16px 20px;
+    border-radius: 18px;
+    max-width: 250px;
+    margin-bottom: 24px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+    font-weight: 500;
+    font-size: 0.95rem;
+    animation: speechWiggle 6s ease-in-out infinite;
+}
+
+.lily-speech-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 10px;
+    border-style: solid;
+    border-color: transparent transparent var(--color-cream) transparent;
+}
+
+@keyframes speechWiggle {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(1.5deg) translateY(-2px); }
+}
+
+/* Ambient Sound Controls */
+.ambient-sounds-control {
+    width: 100%;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 18px;
+}
+
+.ambient-sounds-control h3 {
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    color: var(--color-sage);
+    margin-bottom: 12px;
+}
+
+.ambient-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-ambient {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    padding: 8px 14px;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    color: var(--color-cream);
+}
+
+.btn-ambient:hover {
+    background: rgba(135, 195, 143, 0.15);
+}
+
+.btn-ambient.active {
+    background: var(--color-emerald);
+    color: #fff;
+    box-shadow: 0 0 10px rgba(34, 111, 84, 0.3);
+}
+
+/* Right Panel: Tasks To-Do List */
+.tasks-panel {
+    display: flex;
+    flex-direction: column;
+    max-height: 480px;
+}
+
+.task-stats {
+    font-size: 0.85rem;
+    color: var(--color-sage);
+    background: rgba(135, 195, 143, 0.1);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.task-input-wrapper {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.task-input-wrapper input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    color: var(--color-cream);
+    padding: 12px 16px;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.task-input-wrapper input:focus {
+    border-color: var(--color-sage);
+}
+
+.btn-add {
+    background: var(--color-sage);
+    color: var(--bg-dark);
+    border: none;
+    border-radius: 14px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s;
+}
+
+.btn-add:hover {
+    background: var(--color-mint);
+    transform: scale(1.05);
+}
+
+.btn-add:active {
+    transform: scale(0.95);
+}
+
+.todo-list-container {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+/* Custom Scrollbar for Tasks List */
+.todo-list-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.todo-list-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.todo-list-container::-webkit-scrollbar-thumb {
+    background: rgba(135, 195, 143, 0.15);
+    border-radius: 10px;
+}
+
+.todo-list-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(135, 195, 143, 0.3);
+}
+
+.todo-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.todo-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0, 0, 0, 0.1);
+    padding: 12px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.02);
+    animation: slideIn 0.3s ease;
+    transition: opacity 0.3s ease, transform 0.2s ease;
+}
+
+@keyframes slideIn {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.todo-item-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+/* Lilypad Custom Checkbox */
+.lily-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--color-sage);
+    border-radius: 50%;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+    background: transparent;
+}
+
+.lily-checkbox:hover {
+    background: rgba(135, 195, 143, 0.15);
+}
+
+/* Check state - turns into a nice leaf shape */
+.lily-checkbox:checked {
+    background: var(--color-sage);
+    border-color: var(--color-sage);
+}
+
+.lily-checkbox:checked::after {
+    content: '🌸';
+    position: absolute;
+    font-size: 0.85rem;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.todo-text {
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    color: var(--color-cream);
+    word-break: break-word;
+}
+
+.todo-item.completed .todo-text {
+    text-decoration: line-through;
+    color: var(--color-text-dim);
+}
+
+.btn-delete-task {
+    background: transparent;
+    border: none;
+    color: rgba(244, 235, 217, 0.35);
+    cursor: pointer;
+    transition: color 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+}
+
+.btn-delete-task:hover {
+    color: var(--color-accent-orange);
+    transform: scale(1.1);
+}
+
+/* Bottom Panel: Spotify Controller */
+.spotify-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.spotify-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding-bottom: 16px;
+}
+
+.spotify-title-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.spotify-logo {
+    animation: rotateVinyl 12s linear infinite;
+    animation-play-state: paused;
+}
+
+.frog-headphone-container.music-playing ~ footer .spotify-logo,
+.spotify-logo.active {
+    animation-play-state: running;
+}
+
+@keyframes rotateVinyl {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.spotify-title-group h2 {
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
+    color: var(--color-mint);
+}
+
+.spotify-url-input {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+    max-width: 480px;
+}
+
+.spotify-url-input input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    color: var(--color-cream);
+    padding: 10px 14px;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.spotify-url-input input:focus {
+    border-color: var(--color-sage);
+}
+
+.spotify-url-input button {
+    white-space: nowrap;
+    padding: 0 16px;
+    border-radius: 12px;
+}
+
+.spotify-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+@media (max-width: 768px) {
+    .spotify-body {
+        grid-template-columns: 1fr;
+    }
+}
+
+.curated-playlists {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.curated-playlists h3 {
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    color: var(--color-sage);
+    margin-bottom: 4px;
+}
+
+.playlists-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+@media (max-width: 480px) {
+    .playlists-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.playlist-btn {
+    background: rgba(0,0,0,0.15);
+    border: 1px solid rgba(255,255,255,0.03);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+}
+
+.playlist-btn:hover {
+    background: rgba(135, 195, 143, 0.08);
+    border-color: rgba(135, 195, 143, 0.2);
+}
+
+.playlist-btn.active {
+    background: rgba(34, 111, 84, 0.25);
+    border-color: var(--color-sage);
+}
+
+.playlist-icon {
+    font-size: 1.6rem;
+}
+
+.playlist-meta {
+    display: flex;
+    flex-direction: column;
+}
+
+.playlist-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-cream);
+}
+
+.playlist-desc {
+    font-size: 0.75rem;
+    color: var(--color-text-dim);
+}
+
+.spotify-iframe-container {
+    background: rgba(0,0,0,0.2);
+    border-radius: 16px;
+    overflow: hidden;
+    height: 152px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.02);
+}
