@@ -106,10 +106,19 @@
 
                     <div class="ambient-sounds-control">
                         <h3>🌿 Pond Atmosphere</h3>
-                        <div class="ambient-buttons">
-                            <button class="btn btn-ambient" id="ambient-rain" onclick="toggleAmbient('rain')">🌧️ Rain</button>
-                            <button class="btn btn-ambient" id="ambient-forest" onclick="toggleAmbient('forest')">🌳 Forest</button>
-                            <button class="btn btn-ambient" id="ambient-pond" onclick="toggleAmbient('pond')">🐸 Ribbits</button>
+                        <div class="ambient-controls-grid">
+                            <div class="ambient-control-card">
+                                <button class="btn btn-ambient" id="ambient-rain" onclick="toggleAmbient('rain')">🌧️ Rain</button>
+                                <input type="range" class="vol-slider" id="vol-rain" min="0" max="100" value="50" oninput="adjustVolume('rain', this.value)" aria-label="Rain volume">
+                            </div>
+                            <div class="ambient-control-card">
+                                <button class="btn btn-ambient" id="ambient-forest" onclick="toggleAmbient('forest')">🌳 Forest</button>
+                                <input type="range" class="vol-slider" id="vol-forest" min="0" max="100" value="50" oninput="adjustVolume('forest', this.value)" aria-label="Forest volume">
+                            </div>
+                            <div class="ambient-control-card">
+                                <button class="btn btn-ambient" id="ambient-pond" onclick="toggleAmbient('pond')">🐸 Ribbits</button>
+                                <input type="range" class="vol-slider" id="vol-pond" min="0" max="100" value="50" oninput="adjustVolume('pond', this.value)" aria-label="Ribbits volume">
+                            </div>
                         </div>
                     </div>
                 </div>
