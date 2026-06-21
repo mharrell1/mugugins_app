@@ -24,12 +24,19 @@ Welcome to **Froggy Pomodoro**, a cozy and aesthetic productivity web applicatio
 * Includes built-in custom client-side synthesizers.
 * Toggle gentle rain (low-passed white noise), forest rustles (band-passed brown noise with LFO modulation), and organic frog croaking chimes.
 
+### ☁️ 5. Account & Synchronization (SQLite & Cloud Sync)
+* **Cross-Device Sync**: Sync your tasks and pomodoro settings across multiple devices using a simple username & password account.
+* **Guest Mode Fallback**: If not logged in, the app operates in offline Guest Mode, securely storing your tasks in the browser's `localStorage`.
+* **Zero-Config Sync**: Once logged in, your progress is automatically saved to and retrieved from the Flask backend server.
+
 ---
 
 ## 🛠️ Tech Stack
 
-* **Backend:** Python, Flask, SQLite
-* **Frontend:** Vanilla HTML5 (Semantic), Vanilla CSS3 (Custom Glassmorphism, Animations), Vanilla JavaScript (ES6)
+* **Backend:** Python, Flask, SQLite, Gunicorn (production web server)
+* **Frontend:** Vanilla HTML5, Vanilla CSS3 (Glassmorphism, custom layouts), Vanilla JavaScript (ES6)
+* **Database & Cloud Storage:** Google Cloud Storage (GCS) mounted via Cloud Storage FUSE (for persistent tasks storage)
+* **Deployment Platform:** Google Cloud Run (containerized server running 24/7)
 * **Audio:** Web Audio API (Synthesized noises and chimes)
 * **Music Integration:** Spotify Web Player Embed API
 
@@ -59,6 +66,28 @@ Make sure you have Python 3 installed on your system.
 
 4. **Access the Web App:**
    Open your browser and navigate to **[http://127.0.0.1:5001](http://127.0.0.1:5001)**.
+
+### ☁️ Cloud Deployment (Google Cloud Run)
+
+The application is deployed to Google Cloud Run and operates 24/7. You can access it directly at:
+**👉 [https://froggy-pomodoro-170395053839.us-central1.run.app](https://froggy-pomodoro-170395053839.us-central1.run.app)**
+
+To deploy your own copy of the app:
+
+1. **Prerequisites**: Make sure you have the Google Cloud SDK installed and authenticated.
+2. **Enable APIs**: Enable Cloud Run, Cloud Build, and Cloud Storage APIs.
+3. **Create GCS Bucket**: Create a GCS bucket to store your SQLite database.
+4. **Deploy**:
+   ```bash
+   gcloud run deploy froggy-pomodoro \
+     --source . \
+     --region us-central1 \
+     --execution-environment gen2 \
+     --add-volume name=tasks-db-volume,type=cloud-storage,bucket=YOUR_GCS_BUCKET \
+     --add-volume-mount volume=tasks-db-volume,mount-path=/data \
+     --set-env-vars DB_PATH=/data/tasks.db \
+     --allow-unauthenticated
+   ```
 
 ---
 
