@@ -4,6 +4,10 @@ let rainNode = null;
 let forestNode = null;
 let ribbitTimer = null;
 
+// Account / Sync state variables
+let isLoggedIn = false;
+let loggedInUser = null;
+
 // Initial volume multipliers (0.0 to 1.0)
 let rainVolume = 0.5;
 let forestVolume = 0.5;
@@ -402,14 +406,38 @@ function resetTimer() {
 }
 
 
-/* --- Tasks (To-Do) Backend APIs --- */
+/* --- Tasks (To-Do) Backend APIs & Cloud Sync --- */
+// Get tasks from localStorage
+function getLocalTasks() {
+    const data = localStorage.getItem('froggy_guest_tasks');
+    return data ? JSON.parse(data) : [];
+}
+
+// Save tasks to localStorage
+function saveLocalTasks(tasks) {
+    localStorage.setItem('froggy_guest_tasks', JSON.stringify(tasks));
+}
+
+// Fetch tasks (either backend or localStorage)
 async function fetchTasks() {
-    try {
-        const res = await fetch('/api/tasks');
-        const tasks = await res.json();
+    if (isLoggedIn) {
+        try {
+            const response = await fetch('/api/tasks');
+            if (response.ok) {
+                const tasks = await response.json();
+                renderTasks(tasks);
+            } else if (response.status === 401) {
+                isLoggedIn = false;
+                loggedInUser = null;
+                updateAuthUI();
+                fetchTasks();
+            }
+        } catch (err) {
+            console.error("Error fetching backend tasks:", err);
+        }
+    } else {
+        const tasks = getLocalTasks();
         renderTasks(tasks);
-    } catch (err) {
-        console.error("Error loading tasks:", err);
     }
 }
 
@@ -425,10 +453,10 @@ function renderTasks(tasks) {
         li.className = `todo-item ${task.completed ? 'completed' : ''}`;
         li.innerHTML = `
             <div class="todo-item-left">
-                <input type="checkbox" class="lily-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${task.id}, this.checked)">
+                <input type="checkbox" class="lily-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${task.id}', this.checked)">
                 <span class="todo-text">${escapeHTML(task.title)}</span>
             </div>
-            <button class="btn-delete-task" onclick="deleteTask(${task.id})" aria-label="Delete task">
+            <button class="btn-delete-task" onclick="deleteTask('${task.id}')" aria-label="Delete task">
                 <svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M19 4h-3.5l-1-1h-5l-1 1H5v2h14M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12z"/></svg>
             </button>
         `;
@@ -444,53 +472,90 @@ async function handleAddTask(event) {
     const title = input.value.trim();
     if (!title) return;
 
-    try {
-        const res = await fetch('/api/tasks', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title: title })
-        });
-        
-        if (res.ok) {
-            input.value = '';
-            speak('taskAdded');
-            fetchTasks();
+    if (isLoggedIn) {
+        try {
+            const response = await fetch('/api/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: title })
+            });
+            if (response.ok) {
+                input.value = '';
+                speak('taskAdded');
+                fetchTasks();
+            } else {
+                const errData = await response.json();
+                alert("Error adding task: " + (errData.error || response.statusText));
+            }
+        } catch (err) {
+            console.error("Error adding task to backend:", err);
         }
-    } catch (err) {
-        console.error("Error adding task:", err);
+    } else {
+        const tasks = getLocalTasks();
+        const newTask = {
+            id: 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+            title: title,
+            completed: false,
+            created_at: new Date().toISOString()
+        };
+        tasks.unshift(newTask);
+        saveLocalTasks(tasks);
+        input.value = '';
+        speak('taskAdded');
+        fetchTasks();
     }
 }
 
 async function toggleTask(id, completed) {
-    try {
-        const res = await fetch(`/api/tasks/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ completed: completed ? 1 : 0 })
-        });
-        
-        if (res.ok) {
+    if (isLoggedIn) {
+        try {
+            const response = await fetch(`/api/tasks/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ completed: completed })
+            });
+            if (response.ok) {
+                if (completed) {
+                    playRibbit();
+                    speak('taskCompleted');
+                }
+                fetchTasks();
+            }
+        } catch (err) {
+            console.error("Error updating task on backend:", err);
+        }
+    } else {
+        const tasks = getLocalTasks();
+        const task = tasks.find(t => t.id === id);
+        if (task) {
+            task.completed = completed;
+            saveLocalTasks(tasks);
             if (completed) {
                 playRibbit();
                 speak('taskCompleted');
             }
             fetchTasks();
         }
-    } catch (err) {
-        console.error("Error updating task:", err);
     }
 }
 
 async function deleteTask(id) {
-    try {
-        const res = await fetch(`/api/tasks/${id}`, {
-            method: 'DELETE'
-        });
-        if (res.ok) {
-            fetchTasks();
+    if (isLoggedIn) {
+        try {
+            const response = await fetch(`/api/tasks/${id}`, {
+                method: 'DELETE'
+            });
+            if (response.ok) {
+                fetchTasks();
+            }
+        } catch (err) {
+            console.error("Error deleting task on backend:", err);
         }
-    } catch (err) {
-        console.error("Error deleting task:", err);
+    } else {
+        let tasks = getLocalTasks();
+        tasks = tasks.filter(t => t.id !== id);
+        saveLocalTasks(tasks);
+        fetchTasks();
     }
 }
 
@@ -510,9 +575,24 @@ function loadCustomSpotify() {
     let url = input.value.trim();
     if (!url) return;
 
-    // Support links like: https://open.spotify.com/playlist/37i9dQZF1DX8U7rxhURT67
     try {
-        const matches = url.match(/spotify\.com\/(playlist|track|album)\/([a-zA-Z0-9]+)/);
+        // Handle spotify:type:id URI
+        if (url.startsWith('spotify:')) {
+            const parts = url.split(':');
+            if (parts.length >= 3) {
+                const type = parts[1];
+                const id = parts[2];
+                if (['playlist', 'track', 'album'].includes(type)) {
+                    setSpotifyEmbed(`embed/${type}/${id}`);
+                    document.querySelectorAll('.playlist-btn').forEach(b => b.classList.remove('active'));
+                    input.value = '';
+                    return;
+                }
+            }
+        }
+
+        // Support open.spotify.com links (with optional embed path and search params)
+        const matches = url.match(/spotify\.com\/(?:embed\/)?(playlist|track|album)\/([a-zA-Z0-9]+)/);
         if (matches && matches.length >= 3) {
             const type = matches[1];
             const id = matches[2];
@@ -532,7 +612,9 @@ function loadCustomSpotify() {
 
 function setSpotifyEmbed(uri) {
     const player = document.getElementById('spotify-player');
-    player.src = `https://open.spotify.com/embed/${uri}?utm_source=generator&theme=0`;
+    // Ensure we don't duplicate 'embed/' by cleaning the uri first
+    const cleanUri = uri.replace(/^embed\//, '');
+    player.src = `https://open.spotify.com/embed/${cleanUri}?utm_source=generator&theme=0`;
     
     // Activate head bobbing animation and visual feedback on the frog mascot
     const mascotContainer = document.querySelector('.frog-headphone-container');
@@ -564,11 +646,164 @@ window.addEventListener('DOMContentLoaded', () => {
     const welcomeTexts = LILY_SPEECH.welcome;
     document.getElementById('bubble-text').textContent = welcomeTexts[Math.floor(Math.random() * welcomeTexts.length)];
     
-    // Fetch task list from backend
-    fetchTasks();
-    
     // Initialize standard timer inputs display
     initTimerValues();
     timeLeft = workDuration;
     updateTimerDisplay();
+
+    // Check user login status on load
+    checkUserStatus();
 });
+
+/* --- SQLite Backend Auth Helpers --- */
+async function checkUserStatus() {
+    try {
+        const response = await fetch('/api/user');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.logged_in) {
+                isLoggedIn = true;
+                loggedInUser = data.username;
+            } else {
+                isLoggedIn = false;
+                loggedInUser = null;
+            }
+            updateAuthUI();
+            fetchTasks();
+        }
+    } catch (err) {
+        console.error("Error checking user status:", err);
+        isLoggedIn = false;
+        loggedInUser = null;
+        updateAuthUI();
+        fetchTasks();
+    }
+}
+
+function updateAuthUI() {
+    const btnSync = document.getElementById('btn-cloud-sync');
+    const syncStatusText = document.getElementById('sync-status-text');
+    const authLoggedOut = document.getElementById('auth-logged-out');
+    const authLoggedIn = document.getElementById('auth-logged-in');
+    const loggedInUsername = document.getElementById('logged-in-username');
+
+    if (isLoggedIn && loggedInUser) {
+        if (btnSync) btnSync.classList.add('active');
+        if (syncStatusText) syncStatusText.textContent = 'Sync Active';
+        if (authLoggedOut) authLoggedOut.style.display = 'none';
+        if (authLoggedIn) authLoggedIn.style.display = 'block';
+        if (loggedInUsername) loggedInUsername.textContent = loggedInUser;
+    } else {
+        if (btnSync) btnSync.classList.remove('active');
+        if (syncStatusText) syncStatusText.textContent = 'Sign In';
+        if (authLoggedOut) authLoggedOut.style.display = 'block';
+        if (authLoggedIn) authLoggedIn.style.display = 'none';
+    }
+}
+
+async function handleBackendLogin() {
+    const usernameInput = document.getElementById('auth-username');
+    const passwordInput = document.getElementById('auth-password');
+    
+    const username = usernameInput ? usernameInput.value.trim() : '';
+    const password = passwordInput ? passwordInput.value : '';
+
+    if (!username || !password) {
+        alert("Please enter both username and password.");
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: username, password: password })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            isLoggedIn = true;
+            loggedInUser = data.username;
+            if (usernameInput) usernameInput.value = '';
+            if (passwordInput) passwordInput.value = '';
+            updateAuthUI();
+            fetchTasks();
+            closeSyncModal();
+        } else {
+            const errData = await response.json();
+            alert("Login failed: " + (errData.error || response.statusText));
+        }
+    } catch (err) {
+        console.error("Login error:", err);
+        alert("Error connecting to server. Please try again.");
+    }
+}
+
+async function handleBackendSignup() {
+    const usernameInput = document.getElementById('auth-username');
+    const passwordInput = document.getElementById('auth-password');
+    
+    const username = usernameInput ? usernameInput.value.trim() : '';
+    const password = passwordInput ? passwordInput.value : '';
+
+    if (!username || !password) {
+        alert("Please enter both username and password.");
+        return;
+    }
+
+    if (password.length < 6) {
+        alert("Password must be at least 6 characters.");
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: username, password: password })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            isLoggedIn = true;
+            loggedInUser = data.username;
+            if (usernameInput) usernameInput.value = '';
+            if (passwordInput) passwordInput.value = '';
+            updateAuthUI();
+            fetchTasks();
+            closeSyncModal();
+        } else {
+            const errData = await response.json();
+            alert("Registration failed: " + (errData.error || response.statusText));
+        }
+    } catch (err) {
+        console.error("Registration error:", err);
+        alert("Error connecting to server. Please try again.");
+    }
+}
+
+async function handleBackendLogout() {
+    try {
+        const response = await fetch('/api/logout', {
+            method: 'POST'
+        });
+        if (response.ok) {
+            isLoggedIn = false;
+            loggedInUser = null;
+            updateAuthUI();
+            fetchTasks();
+            closeSyncModal();
+        }
+    } catch (err) {
+        console.error("Logout error:", err);
+    }
+}
+
+/* --- Modal Controls --- */
+function openSyncModal() {
+    document.getElementById('sync-modal').classList.add('open');
+}
+
+function closeSyncModal() {
+    document.getElementById('sync-modal').classList.remove('open');
+}
