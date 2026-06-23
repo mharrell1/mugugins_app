@@ -1609,42 +1609,116 @@ input[type=number] {
     border-radius: 12px;
 }
 
-/* --- Header Hamburger Button Styling --- */
-.header-left-group {
+/* --- App Left Sidebar Panel Styling --- */
+.app-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 70px;
+    height: 100vh;
+    background: rgba(18, 34, 30, 0.7);
+    border-right: 1px solid var(--panel-border);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    z-index: 990;
     display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     align-items: center;
-    gap: 16px;
+    padding: 24px 0;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
+    transition: width 0.3s ease;
 }
 
-.btn-hamburger {
-    background: rgba(135, 195, 143, 0.1);
-    border: 1px solid var(--panel-border);
+.sidebar-top, .sidebar-middle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+}
+
+.btn-sidebar-hamburger {
+    background: transparent;
+    border: none;
     color: var(--color-mint);
-    width: 42px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s ease;
     padding: 0;
 }
 
-.btn-hamburger:hover {
-    background: rgba(135, 195, 143, 0.25);
-    transform: scale(1.05);
+.btn-sidebar-hamburger:hover {
+    background: rgba(135, 195, 143, 0.15);
     color: var(--color-cream);
-    box-shadow: 0 4px 12px rgba(135, 195, 143, 0.15);
+    transform: scale(1.05);
 }
 
-.btn-hamburger:active {
+.btn-sidebar-hamburger:active {
     transform: scale(0.95);
 }
 
-.btn-hamburger svg {
-    width: 22px;
-    height: 22px;
+.btn-sidebar-hamburger svg {
+    width: 24px;
+    height: 24px;
+}
+
+.btn-sidebar-item {
+    background: transparent;
+    border: none;
+    color: var(--color-text-dim);
+    font-size: 1.4rem;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.btn-sidebar-item:hover {
+    background: rgba(135, 195, 143, 0.15);
+    color: var(--color-mint);
+    transform: scale(1.05);
+}
+
+.btn-sidebar-item.active {
+    background: rgba(34, 111, 84, 0.3);
+    border: 1px solid var(--panel-border);
+    color: var(--color-cream);
+}
+
+.sidebar-mascot {
+    font-size: 1.6rem;
+    animation: frogBob 2s infinite ease-in-out;
+}
+
+/* Adjust page padding on desktop and mobile for the fixed sidebar */
+@media (min-width: 769px) {
+    body {
+        padding-left: 90px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .app-sidebar {
+        width: 60px;
+        padding: 16px 0;
+    }
+    body {
+        padding-left: 75px !important;
+        padding-right: 15px !important;
+        padding-top: 15px !important;
+        padding-bottom: 15px !important;
+    }
 }
 
 /* --- Calendar Left Drawer Styling --- */
