@@ -946,6 +946,15 @@ function renderCalendar() {
         
         grid.appendChild(cell);
     }
+
+    // Trailing Padding to make it exactly 42 cells (6 rows of 7 days)
+    const totalRenderedCells = firstDayIndex + totalDays;
+    const trailingPadding = 42 - totalRenderedCells;
+    for (let i = 0; i < trailingPadding; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'calendar-day-cell empty';
+        grid.appendChild(emptyCell);
+    }
     
     // Sync the quick-add date picker default value with current calendar view
     const calDateInput = document.getElementById('cal-item-date');
