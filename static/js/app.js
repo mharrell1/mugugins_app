@@ -946,6 +946,23 @@ function renderCalendar() {
         
         grid.appendChild(cell);
     }
+    
+    // Sync the quick-add date picker default value with current calendar view
+    const calDateInput = document.getElementById('cal-item-date');
+    if (calDateInput) {
+        if (selectedDateFilter) {
+            const parts = selectedDateFilter.split('-');
+            const selYear = parseInt(parts[0], 10);
+            const selMonth = parseInt(parts[1], 10) - 1;
+            if (selYear !== year || selMonth !== month) {
+                calDateInput.value = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+            } else {
+                calDateInput.value = selectedDateFilter;
+            }
+        } else {
+            calDateInput.value = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+        }
+    }
 }
 
 function selectCalendarDate(dateStr) {
@@ -965,11 +982,7 @@ function selectCalendarDate(dateStr) {
         calDateInput.value = dateStr;
     }
     filterAndSortTasks();
-}
-
-function changeMonth(dir) {
-    calendarDate.setMonth(calendarDate.getMonth() + dir);
-    renderCalendar();
+    renderCalendar(); // Highlight selection instantly
 }
 
 function clearDateFilter() {
@@ -977,6 +990,12 @@ function clearDateFilter() {
     const clearBtn = document.getElementById('btn-clear-date-filter');
     if (clearBtn) clearBtn.classList.add('hidden');
     filterAndSortTasks();
+    renderCalendar(); // Remove highlighting instantly
+}
+
+function changeMonth(dir) {
+    calendarDate.setMonth(calendarDate.getMonth() + dir);
+    renderCalendar();
 }
 
 function openCalendarModal() {
