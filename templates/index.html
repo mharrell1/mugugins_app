@@ -140,11 +140,55 @@
                 <form id="todo-form" onsubmit="handleAddTask(event)">
                     <div class="task-input-wrapper">
                         <input type="text" id="task-input" placeholder="Type a task to complete..." autocomplete="off" required>
-                        <button type="submit" class="btn btn-add" id="btn-add-task">
+                        <button type="submit" class="btn btn-add" id="btn-add-task" aria-label="Add task">
                             <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
                         </button>
                     </div>
+                    
+                    <div class="task-details-row">
+                        <div class="task-detail-field">
+                            <label for="task-due-date">📅 Due</label>
+                            <input type="date" id="task-due-date">
+                        </div>
+                        <div class="task-detail-field">
+                            <label for="task-urgency">⚡ Urgency</label>
+                            <select id="task-urgency">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                        <div class="task-detail-field">
+                            <label for="task-category">🏷️ Category</label>
+                            <div class="category-select-wrapper">
+                                <select id="task-category">
+                                    <!-- Populated dynamically -->
+                                </select>
+                                <button type="button" class="btn-mini-add" onclick="promptAddCategory()" title="Add Custom Category">+</button>
+                            </div>
+                        </div>
+                    </div>
                 </form>
+
+                <!-- Filters & Sorting Bar -->
+                <div class="tasks-filter-sort-bar">
+                    <div class="filter-sort-group">
+                        <select id="filter-category" onchange="filterAndSortTasks()" aria-label="Filter by category">
+                            <option value="all">All Categories</option>
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="filter-sort-group">
+                        <select id="sort-tasks" onchange="filterAndSortTasks()" aria-label="Sort tasks by">
+                            <option value="dueDateAsc">📅 Date (Earliest)</option>
+                            <option value="dueDateDesc">📅 Date (Latest)</option>
+                            <option value="urgencyDesc">⚡ Urgency (High first)</option>
+                            <option value="urgencyAsc">⚡ Urgency (Low first)</option>
+                            <option value="none">Default Sort</option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm hidden" id="btn-clear-date-filter" onclick="clearDateFilter()">Clear Date Filter</button>
+                </div>
 
                 <div class="todo-list-container">
                     <ul id="todo-list" class="todo-list">
@@ -153,6 +197,26 @@
                 </div>
             </section>
         </main>
+
+        <!-- Monthly Calendar Panel -->
+        <section class="panel calendar-panel" id="calendar-section">
+            <div class="panel-header">
+                <h2>📅 Lily's Monthly Calendar</h2>
+                <div class="calendar-controls">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="changeMonth(-1)">◀</button>
+                    <span id="calendar-month-year" class="calendar-month-year">June 2026</span>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="changeMonth(1)">▶</button>
+                </div>
+            </div>
+            <div class="calendar-container">
+                <div class="calendar-weekdays">
+                    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                </div>
+                <div class="calendar-days-grid" id="calendar-days-grid">
+                    <!-- Days will be dynamically rendered here -->
+                </div>
+            </div>
+        </section>
 
         <!-- Bottom Panel: Spotify Player & Curated Playlists -->
         <footer class="panel spotify-panel" id="spotify-section">

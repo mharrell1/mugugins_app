@@ -407,6 +407,13 @@ function resetTimer() {
 
 
 /* --- Tasks (To-Do) Backend APIs & Cloud Sync --- */
+/* --- State Variables for Calendar, Category, and Urgency --- */
+let allTasks = [];
+let calendarDate = new Date(2026, 5, 22); // Initialized to mock current month: June 2026
+let selectedDateFilter = null; // YYYY-MM-DD
+let customCategories = JSON.parse(localStorage.getItem('froggy_custom_categories') || '[]');
+
+/* --- Tasks (To-Do) Backend APIs & Cloud Sync --- */
 // Get tasks from localStorage
 function getLocalTasks() {
     const data = localStorage.getItem('froggy_guest_tasks');
@@ -425,7 +432,8 @@ async function fetchTasks() {
             const response = await fetch('/api/tasks');
             if (response.ok) {
                 const tasks = await response.json();
-                renderTasks(tasks);
+                allTasks = tasks;
+                filterAndSortTasks();
             } else if (response.status === 401) {
                 isLoggedIn = false;
                 loggedInUser = null;
@@ -436,9 +444,60 @@ async function fetchTasks() {
             console.error("Error fetching backend tasks:", err);
         }
     } else {
-        const tasks = getLocalTasks();
-        renderTasks(tasks);
+        allTasks = getLocalTasks();
+        filterAndSortTasks();
     }
+}
+
+// Filter and Sort Pipeline
+function filterAndSortTasks() {
+    const categoryFilter = document.getElementById('filter-category').value;
+    const sortVal = document.getElementById('sort-tasks').value;
+    
+    let filtered = [...allTasks];
+    
+    // 1. Filter by category
+    if (categoryFilter !== 'all') {
+        filtered = filtered.filter(t => (t.category || 'School') === categoryFilter);
+    }
+    
+    // 2. Filter by calendar selected date
+    if (selectedDateFilter) {
+        filtered = filtered.filter(t => t.due_date === selectedDateFilter);
+    }
+    
+    // 3. Sort tasks
+    const urgencyWeight = { 'high': 3, 'medium': 2, 'low': 1 };
+    filtered.sort((a, b) => {
+        // Completed tasks are pushed to the bottom
+        if (a.completed !== b.completed) {
+            return a.completed ? 1 : -1;
+        }
+        
+        if (sortVal === 'dueDateAsc') {
+            if (!a.due_date) return 1;
+            if (!b.due_date) return -1;
+            return a.due_date.localeCompare(b.due_date);
+        } else if (sortVal === 'dueDateDesc') {
+            if (!a.due_date) return 1;
+            if (!b.due_date) return -1;
+            return b.due_date.localeCompare(a.due_date);
+        } else if (sortVal === 'urgencyDesc') {
+            const wA = urgencyWeight[a.urgency || 'medium'] || 2;
+            const wB = urgencyWeight[b.urgency || 'medium'] || 2;
+            return wB - wA;
+        } else if (sortVal === 'urgencyAsc') {
+            const wA = urgencyWeight[a.urgency || 'medium'] || 2;
+            const wB = urgencyWeight[b.urgency || 'medium'] || 2;
+            return wA - wB;
+        } else {
+            // Default: sort by ID descending
+            return (b.id + '').localeCompare(a.id + '');
+        }
+    });
+    
+    renderTasks(filtered);
+    renderCalendar();
 }
 
 function renderTasks(tasks) {
@@ -451,10 +510,21 @@ function renderTasks(tasks) {
 
         const li = document.createElement('li');
         li.className = `todo-item ${task.completed ? 'completed' : ''}`;
+        
+        const catColor = getCategoryColor(task.category || 'School');
+        const formattedDate = task.due_date ? formatReadableDate(task.due_date) : 'No due date';
+        
         li.innerHTML = `
             <div class="todo-item-left">
                 <input type="checkbox" class="lily-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${task.id}', this.checked)">
-                <span class="todo-text">${escapeHTML(task.title)}</span>
+                <div class="todo-item-content">
+                    <span class="todo-text">${escapeHTML(task.title)}</span>
+                    <div class="todo-meta-row">
+                        ${task.due_date ? `<span class="todo-meta-badge due-badge">📅 ${formattedDate}</span>` : ''}
+                        <span class="todo-meta-badge urgency-badge urgency-${task.urgency || 'medium'}">⚡ ${capitalize(task.urgency || 'medium')}</span>
+                        <span class="todo-meta-badge category-badge" style="background: ${catColor}22; color: ${catColor}; border: 1px solid ${catColor}44;">🏷️ ${escapeHTML(task.category || 'School')}</span>
+                    </div>
+                </div>
             </div>
             <button class="btn-delete-task" onclick="deleteTask('${task.id}')" aria-label="Delete task">
                 <svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M19 4h-3.5l-1-1h-5l-1 1H5v2h14M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12z"/></svg>
@@ -472,15 +542,27 @@ async function handleAddTask(event) {
     const title = input.value.trim();
     if (!title) return;
 
+    const dueDate = document.getElementById('task-due-date').value || null;
+    const urgency = document.getElementById('task-urgency').value || 'medium';
+    const category = document.getElementById('task-category').value || 'School';
+
     if (isLoggedIn) {
         try {
             const response = await fetch('/api/tasks', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: title })
+                body: JSON.stringify({ 
+                    title: title,
+                    due_date: dueDate,
+                    category: category,
+                    urgency: urgency
+                })
             });
             if (response.ok) {
                 input.value = '';
+                // reset fields back to defaults
+                document.getElementById('task-due-date').value = '2026-06-22';
+                document.getElementById('task-urgency').value = 'medium';
                 speak('taskAdded');
                 fetchTasks();
             } else {
@@ -496,11 +578,16 @@ async function handleAddTask(event) {
             id: 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
             title: title,
             completed: false,
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            due_date: dueDate,
+            category: category,
+            urgency: urgency
         };
         tasks.unshift(newTask);
         saveLocalTasks(tasks);
         input.value = '';
+        document.getElementById('task-due-date').value = '2026-06-22';
+        document.getElementById('task-urgency').value = 'medium';
         speak('taskAdded');
         fetchTasks();
     }
@@ -540,22 +627,24 @@ async function toggleTask(id, completed) {
 }
 
 async function deleteTask(id) {
-    if (isLoggedIn) {
-        try {
-            const response = await fetch(`/api/tasks/${id}`, {
-                method: 'DELETE'
-            });
-            if (response.ok) {
-                fetchTasks();
+    if (confirm("Delete this task from the lily pad, ribbit?")) {
+        if (isLoggedIn) {
+            try {
+                const response = await fetch(`/api/tasks/${id}`, {
+                    method: 'DELETE'
+                });
+                if (response.ok) {
+                    fetchTasks();
+                }
+            } catch (err) {
+                console.error("Error deleting task on backend:", err);
             }
-        } catch (err) {
-            console.error("Error deleting task on backend:", err);
+        } else {
+            let tasks = getLocalTasks();
+            tasks = tasks.filter(t => t.id !== id);
+            saveLocalTasks(tasks);
+            fetchTasks();
         }
-    } else {
-        let tasks = getLocalTasks();
-        tasks = tasks.filter(t => t.id !== id);
-        saveLocalTasks(tasks);
-        fetchTasks();
     }
 }
 
@@ -618,10 +707,11 @@ function setSpotifyEmbed(uri) {
     
     // Activate head bobbing animation and visual feedback on the frog mascot
     const mascotContainer = document.querySelector('.frog-headphone-container');
-    mascotContainer.classList.add('music-playing');
+    if (mascotContainer) mascotContainer.classList.add('music-playing');
     
     // Make vinyl/spotify logo spin
-    document.querySelector('.spotify-logo').classList.add('active');
+    const spotifyLogo = document.querySelector('.spotify-logo');
+    if (spotifyLogo) spotifyLogo.classList.add('active');
     
     document.getElementById('bubble-text').textContent = "Excellent selection! Cozy tunes active, let's keep working!";
 }
@@ -629,6 +719,7 @@ function setSpotifyEmbed(uri) {
 
 /* --- Helpers & Initializations --- */
 function escapeHTML(str) {
+    if (!str) return '';
     return str.replace(/[&<>'"]/g, 
         tag => ({
             '&': '&amp;',
@@ -651,9 +742,224 @@ window.addEventListener('DOMContentLoaded', () => {
     timeLeft = workDuration;
     updateTimerDisplay();
 
+    // Set mock date on due date field: 2026-06-22
+    document.getElementById('task-due-date').value = '2026-06-22';
+    
+    // Populate categories select lists
+    populateCategoryDropdowns();
+
     // Check user login status on load
     checkUserStatus();
+
+    // Initial render calendar
+    renderCalendar();
 });
+
+/* --- Category Management Helpers --- */
+function populateCategoryDropdowns() {
+    const taskCatSelect = document.getElementById('task-category');
+    const filterCatSelect = document.getElementById('filter-category');
+    
+    const taskSelected = taskCatSelect.value;
+    const filterSelected = filterCatSelect.value;
+    
+    const categories = ['School', 'Work', ...customCategories];
+    
+    taskCatSelect.innerHTML = '';
+    categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        taskCatSelect.appendChild(opt);
+    });
+    
+    filterCatSelect.innerHTML = '<option value="all">All Categories</option>';
+    categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        filterCatSelect.appendChild(opt);
+    });
+    
+    if (categories.includes(taskSelected)) {
+        taskCatSelect.value = taskSelected;
+    }
+    if (categories.includes(filterSelected) || filterSelected === 'all') {
+        filterCatSelect.value = filterSelected;
+    }
+}
+
+function promptAddCategory() {
+    const newCatName = prompt("Enter new category name, ribbit:");
+    if (newCatName) {
+        const trimmed = newCatName.trim();
+        if (trimmed) {
+            const exists = ['school', 'work', ...customCategories.map(c => c.toLowerCase())].includes(trimmed.toLowerCase());
+            if (exists) {
+                alert("This category already exists, ribbit!");
+                return;
+            }
+            customCategories.push(trimmed);
+            localStorage.setItem('froggy_custom_categories', JSON.stringify(customCategories));
+            populateCategoryDropdowns();
+            document.getElementById('task-category').value = trimmed;
+        }
+    }
+}
+
+function getCategoryColor(categoryName) {
+    const defaults = {
+        'School': '#87c38f', // Sage Green
+        'Work': '#f29e4c',   // Warm Orange
+    };
+    if (defaults[categoryName]) return defaults[categoryName];
+    
+    // Hash-based pastel color generator
+    let hash = 0;
+    for (let i = 0; i < categoryName.length; i++) {
+        hash = categoryName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const colors = [
+        '#e76f51', // Terracotta
+        '#2a9d8f', // Teal
+        '#b58db6', // Lavender
+        '#457b9d', // Slate blue
+        '#b5a48c', // Cozy warm brown
+        '#a8dadc'  // Light blue
+    ];
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+}
+
+function formatReadableDate(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    
+    const date = new Date(year, month, day);
+    const options = { month: 'short', day: 'numeric', year: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+}
+
+function capitalize(str) {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/* --- Monthly Calendar Functions --- */
+function renderCalendar() {
+    const grid = document.getElementById('calendar-days-grid');
+    const monthYearLabel = document.getElementById('calendar-month-year');
+    if (!grid || !monthYearLabel) return;
+    
+    grid.innerHTML = '';
+    
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth();
+    
+    const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ];
+    monthYearLabel.textContent = `${monthNames[month]} ${year}`;
+    
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    
+    // Weekday Padding
+    for (let i = 0; i < firstDayIndex; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'calendar-day-cell empty';
+        grid.appendChild(emptyCell);
+    }
+    
+    const mockTodayStr = '2026-06-22';
+    
+    for (let day = 1; day <= totalDays; day++) {
+        const cell = document.createElement('div');
+        cell.className = 'calendar-day-cell';
+        
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        
+        if (dateStr === mockTodayStr) {
+            cell.classList.add('today');
+        }
+        if (dateStr === selectedDateFilter) {
+            cell.classList.add('selected');
+        }
+        
+        // Day Num
+        const numSpan = document.createElement('span');
+        numSpan.className = 'day-num';
+        numSpan.textContent = day;
+        cell.appendChild(numSpan);
+        
+        // Day tasks indicators
+        const dayTasks = allTasks.filter(t => t.due_date === dateStr);
+        if (dayTasks.length > 0) {
+            const tasksContainer = document.createElement('div');
+            tasksContainer.className = 'day-tasks';
+            
+            const visible = dayTasks.slice(0, 2);
+            visible.forEach(task => {
+                const ind = document.createElement('div');
+                ind.className = `mini-task-indicator urgency-${task.urgency || 'medium'} ${task.completed ? 'completed' : ''}`;
+                ind.textContent = task.title;
+                ind.title = task.title;
+                tasksContainer.appendChild(ind);
+            });
+            
+            if (dayTasks.length > 2) {
+                const more = document.createElement('div');
+                more.className = 'mini-task-indicator-more';
+                more.style.fontSize = '0.68rem';
+                more.style.color = 'var(--color-sage)';
+                more.style.marginTop = '2px';
+                more.textContent = `+${dayTasks.length - 2} more`;
+                tasksContainer.appendChild(more);
+            }
+            
+            cell.appendChild(tasksContainer);
+        }
+        
+        cell.addEventListener('click', () => {
+            selectCalendarDate(dateStr);
+        });
+        
+        grid.appendChild(cell);
+    }
+}
+
+function selectCalendarDate(dateStr) {
+    const clearBtn = document.getElementById('btn-clear-date-filter');
+    if (selectedDateFilter === dateStr) {
+        selectedDateFilter = null;
+        if (clearBtn) clearBtn.classList.add('hidden');
+    } else {
+        selectedDateFilter = dateStr;
+        if (clearBtn) {
+            clearBtn.classList.remove('hidden');
+            clearBtn.textContent = `Clear Filter (${formatReadableDate(dateStr)})`;
+        }
+    }
+    filterAndSortTasks();
+}
+
+function changeMonth(dir) {
+    calendarDate.setMonth(calendarDate.getMonth() + dir);
+    renderCalendar();
+}
+
+function clearDateFilter() {
+    selectedDateFilter = null;
+    const clearBtn = document.getElementById('btn-clear-date-filter');
+    if (clearBtn) clearBtn.classList.add('hidden');
+    filterAndSortTasks();
+}
+
 
 /* --- SQLite Backend Auth Helpers --- */
 async function checkUserStatus() {

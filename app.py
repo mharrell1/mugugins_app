@@ -46,11 +46,17 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-    # Add user_id column to tasks table if not exists
+    # Add columns to tasks table if they don't exist
     cursor = db.execute("PRAGMA table_info(tasks)")
     columns = [row['name'] for row in cursor.fetchall()]
     if 'user_id' not in columns:
         db.execute("ALTER TABLE tasks ADD COLUMN user_id INTEGER REFERENCES users(id)")
+    if 'due_date' not in columns:
+        db.execute("ALTER TABLE tasks ADD COLUMN due_date TEXT")
+    if 'category' not in columns:
+        db.execute("ALTER TABLE tasks ADD COLUMN category TEXT")
+    if 'urgency' not in columns:
+        db.execute("ALTER TABLE tasks ADD COLUMN urgency TEXT")
     db.commit()
 
 with app.app_context():
@@ -134,7 +140,10 @@ def get_tasks():
             'id': task['id'],
             'title': task['title'],
             'completed': bool(task['completed']),
-            'created_at': task['created_at']
+            'created_at': task['created_at'],
+            'due_date': task['due_date'],
+            'category': task['category'] or 'School',
+            'urgency': task['urgency'] or 'medium'
         } for task in tasks
     ])
 
@@ -145,12 +154,19 @@ def add_task():
 
     data = request.get_json() or {}
     title = data.get('title', '').strip()
+    due_date = data.get('due_date', '').strip() or None
+    category = data.get('category', 'School').strip() or 'School'
+    urgency = data.get('urgency', 'medium').strip() or 'medium'
+
     if not title:
         return jsonify({'error': 'Task title is required'}), 400
 
     db = get_db()
     try:
-        cursor = db.execute('INSERT INTO tasks (user_id, title, completed) VALUES (?, ?, 0)', (session['user_id'], title))
+        cursor = db.execute(
+            'INSERT INTO tasks (user_id, title, completed, due_date, category, urgency) VALUES (?, ?, 0, ?, ?, ?)',
+            (session['user_id'], title, due_date, category, urgency)
+        )
         db.commit()
         task_id = cursor.lastrowid
         
@@ -159,7 +175,10 @@ def add_task():
             'id': task['id'],
             'title': task['title'],
             'completed': bool(task['completed']),
-            'created_at': task['created_at']
+            'created_at': task['created_at'],
+            'due_date': task['due_date'],
+            'category': task['category'] or 'School',
+            'urgency': task['urgency'] or 'medium'
         }), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -171,8 +190,10 @@ def update_task(task_id):
 
     data = request.get_json() or {}
     completed = data.get('completed')
-    if completed is None:
-        return jsonify({'error': 'Completed status is required'}), 400
+    title = data.get('title')
+    due_date = data.get('due_date')
+    category = data.get('category')
+    urgency = data.get('urgency')
 
     db = get_db()
     task = db.execute('SELECT * FROM tasks WHERE id = ? AND user_id = ?', (task_id, session['user_id'])).fetchone()
@@ -180,7 +201,30 @@ def update_task(task_id):
         return jsonify({'error': 'Task not found'}), 404
 
     try:
-        db.execute('UPDATE tasks SET completed = ? WHERE id = ?', (1 if completed else 0, task_id))
+        update_fields = []
+        params = []
+        if completed is not None:
+            update_fields.append("completed = ?")
+            params.append(1 if completed else 0)
+        if title is not None:
+            update_fields.append("title = ?")
+            params.append(title.strip())
+        if due_date is not None:
+            update_fields.append("due_date = ?")
+            params.append(due_date.strip() or None)
+        if category is not None:
+            update_fields.append("category = ?")
+            params.append(category.strip() or 'School')
+        if urgency is not None:
+            update_fields.append("urgency = ?")
+            params.append(urgency.strip() or 'medium')
+
+        if not update_fields:
+            return jsonify({'error': 'No fields to update'}), 400
+
+        params.append(task_id)
+        query = f"UPDATE tasks SET {', '.join(update_fields)} WHERE id = ?"
+        db.execute(query, tuple(params))
         db.commit()
         return jsonify({'success': True})
     except Exception as e:

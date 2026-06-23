@@ -11,20 +11,30 @@ Welcome to **Froggy Pomodoro**, a cozy and aesthetic productivity web applicatio
 * **Cozy Status Tracker:** Keeps track of your active focus cycles and alerts you when it's time to take a break or start studying again.
 * **Animated Progress Circular Ring:** Smoothly visualizes the remaining time.
 
-### 📋 2. "Tasks to Hop On" (To-Do List)
-* **Persistent Storage:** Connected to a full-stack Flask backend using a SQLite database to save your tasks across sessions.
+### 📋 2. "Tasks to Hop On" (To-Do List Updates!)
+* **Due Dates:** Assign specific target dates to tasks to help plan your schedule.
+* **Cozy Categorization:** Label tasks as **School** or **Work**, or click `+` to add custom categories. Custom categories are automatically color-coded with unique pastel badges.
+* **Urgency Levels:** Label tasks as **Low** 🟢, **Medium** 🟡, or **High** 🔴 urgency to identify priority items at a glance.
+* **Sorting & Filters:** Sort your list by due date (earliest/latest) or urgency (high/low first), and filter items by category.
+* **Persistent Storage:** Syncs automatically with the Flask backend or uses Guest Mode local storage.
 * **Interactive Completion:** Checking off a task spawns blooming cherry blossoms, accompanied by a happy croak from Lily.
 
-### 📻 3. Froggy Pond Radio (Spotify Integration)
+### 📅 3. Lily's Monthly Calendar (New!)
+* **Month at a Glance:** View all tasks plotted on a month grid, complete with color-coded urgency flags.
+* **Previous/Next Controls:** Seamlessly navigate between months using the left and right indicators.
+* **Click-to-Filter:** Click any calendar day cell to instantly filter your task list to only show items due on that date. Click again to clear the filter.
+* **Current Day Highlight:** Today's date is automatically highlighted with a cozy mint green border.
+
+### 📻 4. Froggy Pond Radio (Spotify Integration)
 * **Curated Stations:** Quick-switch between four pre-configured ambient playlists (Lofi Focus Beats, Peaceful Piano, Nature Rain Sounds, and Nintendo & Chill).
 * **Load Custom Music:** Paste any Spotify track, album, or playlist link to load it dynamically into the built-in media widget.
 * **Animated Interactions:** When music starts playing, Lily puts on headphones, bobs her head to the beat, and floating music notes drift across the screen!
 
-### 🌧️ 4. Ambient Sound Engine (Web Audio API)
+### 🌧️ 5. Ambient Sound Engine (Web Audio API)
 * Includes built-in custom client-side synthesizers.
 * Toggle gentle rain (low-passed white noise), forest rustles (band-passed brown noise with LFO modulation), and organic frog croaking chimes.
 
-### ☁️ 5. Account & Synchronization (SQLite & Cloud Sync)
+### ☁️ 6. Account & Synchronization (SQLite & Cloud Sync)
 * **Cross-Device Sync**: Sync your tasks and pomodoro settings across multiple devices using a simple username & password account.
 * **Guest Mode Fallback**: If not logged in, the app operates in offline Guest Mode, securely storing your tasks in the browser's `localStorage`.
 * **Zero-Config Sync**: Once logged in, your progress is automatically saved to and retrieved from the Flask backend server.
