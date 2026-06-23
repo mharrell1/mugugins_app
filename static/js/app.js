@@ -409,7 +409,7 @@ function resetTimer() {
 /* --- Tasks (To-Do) Backend APIs & Cloud Sync --- */
 /* --- State Variables for Calendar, Category, and Urgency --- */
 let allTasks = [];
-let calendarDate = new Date(2026, 5, 22); // Initialized to mock current month: June 2026
+let calendarDate = new Date(Date.UTC(2026, 5, 22)); // Initialized to mock current month: June 2026 in UTC
 let selectedDateFilter = null; // YYYY-MM-DD
 let customCategories = JSON.parse(localStorage.getItem('froggy_custom_categories') || '[]');
 
@@ -854,8 +854,8 @@ function formatReadableDate(dateStr) {
     const month = parseInt(parts[1], 10) - 1;
     const day = parseInt(parts[2], 10);
     
-    const date = new Date(year, month, day);
-    const options = { month: 'short', day: 'numeric', year: 'numeric' };
+    const date = new Date(Date.UTC(year, month, day));
+    const options = { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' };
     return date.toLocaleDateString('en-US', options);
 }
 
@@ -872,8 +872,8 @@ function renderCalendar() {
     
     grid.innerHTML = '';
     
-    const year = calendarDate.getFullYear();
-    const month = calendarDate.getMonth();
+    const year = calendarDate.getUTCFullYear();
+    const month = calendarDate.getUTCMonth();
     
     const monthNames = [
         "January", "February", "March", "April", "May", "June",
@@ -881,8 +881,8 @@ function renderCalendar() {
     ];
     monthYearLabel.textContent = `${monthNames[month]} ${year}`;
     
-    const firstDayIndex = new Date(year, month, 1).getDay();
-    const totalDays = new Date(year, month + 1, 0).getDate();
+    const firstDayIndex = new Date(Date.UTC(year, month, 1)).getUTCDay();
+    const totalDays = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
     
     // Weekday Padding
     for (let i = 0; i < firstDayIndex; i++) {
@@ -994,7 +994,7 @@ function clearDateFilter() {
 }
 
 function changeMonth(dir) {
-    calendarDate.setMonth(calendarDate.getMonth() + dir);
+    calendarDate.setUTCMonth(calendarDate.getUTCMonth() + dir);
     renderCalendar();
 }
 
