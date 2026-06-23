@@ -980,6 +980,18 @@ input[type=number] {
     width: 100%;
 }
 
+.calendar-panel.minimized {
+    min-height: auto;
+    padding-bottom: 16px;
+}
+
+.calendar-toggle-icon {
+    font-size: 0.85rem;
+    color: var(--color-mint);
+    transition: transform 0.2s;
+    user-select: none;
+}
+
 .calendar-controls {
     display: flex;
     align-items: center;

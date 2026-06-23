@@ -201,14 +201,17 @@
         <!-- Monthly Calendar Panel -->
         <section class="panel calendar-panel" id="calendar-section">
             <div class="panel-header">
-                <h2>📅 Lily's Monthly Calendar</h2>
-                <div class="calendar-controls">
+                <div class="panel-header-left" onclick="toggleCalendarMinimize()" style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <h2>📅 Lily's Monthly Calendar</h2>
+                    <span id="calendar-toggle-icon" class="calendar-toggle-icon">▼</span>
+                </div>
+                <div class="calendar-controls" id="calendar-header-controls">
                     <button type="button" class="btn btn-secondary btn-sm" onclick="changeMonth(-1)">◀</button>
                     <span id="calendar-month-year" class="calendar-month-year">June 2026</span>
                     <button type="button" class="btn btn-secondary btn-sm" onclick="changeMonth(1)">▶</button>
                 </div>
             </div>
-            <div class="calendar-container">
+            <div class="calendar-container" id="calendar-content-container">
                 <div class="calendar-weekdays">
                     <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
                 </div>

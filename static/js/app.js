@@ -753,6 +753,20 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Initial render calendar
     renderCalendar();
+
+    // Check calendar minimized preference
+    const isCalendarMinimized = localStorage.getItem('calendar_minimized') === 'true';
+    if (isCalendarMinimized) {
+        const section = document.getElementById('calendar-section');
+        const container = document.getElementById('calendar-content-container');
+        const controls = document.getElementById('calendar-header-controls');
+        const icon = document.getElementById('calendar-toggle-icon');
+        
+        if (section) section.classList.add('minimized');
+        if (container) container.style.display = 'none';
+        if (controls) controls.style.display = 'none';
+        if (icon) icon.textContent = '▲';
+    }
 });
 
 /* --- Category Management Helpers --- */
@@ -959,6 +973,29 @@ function clearDateFilter() {
     if (clearBtn) clearBtn.classList.add('hidden');
     filterAndSortTasks();
 }
+
+function toggleCalendarMinimize() {
+    const section = document.getElementById('calendar-section');
+    const container = document.getElementById('calendar-content-container');
+    const controls = document.getElementById('calendar-header-controls');
+    const icon = document.getElementById('calendar-toggle-icon');
+    if (!section || !container) return;
+    
+    const isMinimized = section.classList.toggle('minimized');
+    localStorage.setItem('calendar_minimized', isMinimized ? 'true' : 'false');
+    
+    if (isMinimized) {
+        container.style.display = 'none';
+        if (controls) controls.style.display = 'none';
+        if (icon) icon.textContent = '▲';
+    } else {
+        container.style.display = 'flex';
+        if (controls) controls.style.display = 'flex';
+        if (icon) icon.textContent = '▼';
+        renderCalendar();
+    }
+}
+window.toggleCalendarMinimize = toggleCalendarMinimize;
 
 
 /* --- SQLite Backend Auth Helpers --- */
