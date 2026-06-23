@@ -980,6 +980,7 @@ function clearDateFilter() {
 }
 
 function openCalendarModal() {
+    closeGamesModal(); // Close games drawer if open
     const modal = document.getElementById('calendar-modal');
     if (modal) {
         modal.classList.add('open');
@@ -987,6 +988,8 @@ function openCalendarModal() {
         populateCategoryDropdowns();
         renderCalendar();
     }
+    const sidebarCalBtn = document.getElementById('btn-sidebar-calendar');
+    if (sidebarCalBtn) sidebarCalBtn.classList.add('active');
 }
 
 function closeCalendarModal() {
@@ -994,6 +997,8 @@ function closeCalendarModal() {
     if (modal) {
         modal.classList.remove('open');
     }
+    const sidebarCalBtn = document.getElementById('btn-sidebar-calendar');
+    if (sidebarCalBtn) sidebarCalBtn.classList.remove('active');
 }
 
 async function handleCalendarAdd(event) {
@@ -1211,3 +1216,233 @@ function openSyncModal() {
 function closeSyncModal() {
     document.getElementById('sync-modal').classList.remove('open');
 }
+
+/* --- Games Modal & 2048 Game Engine --- */
+let isGamesModalOpen = false;
+let board2048 = [];
+let score2048 = 0;
+let bestScore2048 = parseInt(localStorage.getItem('froggy_2048_best') || '0', 10);
+let hasWon2048 = false;
+let isGameOver2048 = false;
+
+function openGamesModal() {
+    closeCalendarModal(); // Close calendar drawer if open
+    const modal = document.getElementById('games-modal');
+    if (modal) {
+        modal.classList.add('open');
+        isGamesModalOpen = true;
+        
+        const sidebarGamesBtn = document.getElementById('btn-sidebar-games');
+        if (sidebarGamesBtn) sidebarGamesBtn.classList.add('active');
+        
+        // Initialize game on first open or if empty
+        if (board2048.length === 0) {
+            init2048();
+        }
+    }
+}
+
+function closeGamesModal() {
+    const modal = document.getElementById('games-modal');
+    if (modal) {
+        modal.classList.remove('open');
+    }
+    isGamesModalOpen = false;
+    const sidebarGamesBtn = document.getElementById('btn-sidebar-games');
+    if (sidebarGamesBtn) sidebarGamesBtn.classList.remove('active');
+}
+
+function init2048() {
+    board2048 = [
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0]
+    ];
+    score2048 = 0;
+    hasWon2048 = false;
+    isGameOver2048 = false;
+    
+    // Hide status overlay
+    const msgOverlay = document.getElementById('game-message-2048');
+    if (msgOverlay) {
+        msgOverlay.className = 'game-message-2048';
+    }
+    
+    spawnTile2048();
+    spawnTile2048();
+    draw2048();
+}
+
+function restart2048() {
+    init2048();
+}
+
+function spawnTile2048() {
+    let emptyCells = [];
+    for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+            if (board2048[r][c] === 0) {
+                emptyCells.push({r: r, c: c});
+            }
+        }
+    }
+    if (emptyCells.length > 0) {
+        let randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+        board2048[randomCell.r][randomCell.c] = Math.random() < 0.9 ? 2 : 4;
+    }
+}
+
+function draw2048() {
+    const tileContainer = document.getElementById('tile-container-2048');
+    if (!tileContainer) return;
+    
+    tileContainer.innerHTML = '';
+    
+    for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+            const val = board2048[r][c];
+            if (val > 0) {
+                const tileElem = document.createElement('div');
+                tileElem.className = `tile-2048-elem tile-pos-${r}-${c} tile-val-${val}`;
+                
+                const innerElem = document.createElement('div');
+                innerElem.className = 'tile-inner-2048';
+                innerElem.textContent = val === 2048 ? '2048 🐸' : val;
+                
+                tileElem.appendChild(innerElem);
+                tileContainer.appendChild(tileElem);
+            }
+        }
+    }
+    
+    // Update scores
+    document.getElementById('score-2048').textContent = score2048;
+    if (score2048 > bestScore2048) {
+        bestScore2048 = score2048;
+        localStorage.setItem('froggy_2048_best', bestScore2048);
+    }
+    document.getElementById('best-2048').textContent = bestScore2048;
+}
+
+// 2048 line slide function
+function slideLineLeft(line) {
+    let filtered = line.filter(x => x !== 0);
+    for (let i = 0; i < filtered.length - 1; i++) {
+        if (filtered[i] === filtered[i+1]) {
+            filtered[i] *= 2;
+            score2048 += filtered[i];
+            filtered[i+1] = 0;
+            if (filtered[i] === 2048 && !hasWon2048) {
+                hasWon2048 = true;
+                handle2048Win();
+            }
+        }
+    }
+    filtered = filtered.filter(x => x !== 0);
+    while (filtered.length < 4) {
+        filtered.push(0);
+    }
+    return filtered;
+}
+
+function move2048(direction) {
+    if (isGameOver2048) return;
+    
+    let originalBoard = JSON.stringify(board2048);
+    
+    if (direction === 'left') {
+        for (let r = 0; r < 4; r++) {
+            board2048[r] = slideLineLeft(board2048[r]);
+        }
+    } else if (direction === 'right') {
+        for (let r = 0; r < 4; r++) {
+            let reversed = [...board2048[r]].reverse();
+            let slid = slideLineLeft(reversed);
+            board2048[r] = slid.reverse();
+        }
+    } else if (direction === 'up') {
+        for (let c = 0; c < 4; c++) {
+            let column = [board2048[0][c], board2048[1][c], board2048[2][c], board2048[3][c]];
+            let slid = slideLineLeft(column);
+            for (let r = 0; r < 4; r++) {
+                board2048[r][c] = slid[r];
+            }
+        }
+    } else if (direction === 'down') {
+        for (let c = 0; c < 4; c++) {
+            let column = [board2048[0][c], board2048[1][c], board2048[2][c], board2048[3][c]].reverse();
+            let slid = slideLineLeft(column);
+            slid.reverse();
+            for (let r = 0; r < 4; r++) {
+                board2048[r][c] = slid[r];
+            }
+        }
+    }
+    
+    // Check if board state changed
+    if (originalBoard !== JSON.stringify(board2048)) {
+        spawnTile2048();
+        draw2048();
+        check2048GameOver();
+    }
+}
+
+function check2048GameOver() {
+    // Check for empty cells
+    for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+            if (board2048[r][c] === 0) return;
+        }
+    }
+    
+    // Check for adjacent merges
+    for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+            if (c < 3 && board2048[r][c] === board2048[r][c+1]) return;
+            if (r < 3 && board2048[r][c] === board2048[r+1][c]) return;
+        }
+    }
+    
+    isGameOver2048 = true;
+    handle2048Loss();
+}
+
+function handle2048Win() {
+    const msgOverlay = document.getElementById('game-message-2048');
+    const msgText = document.getElementById('game-status-text-2048');
+    if (msgOverlay && msgText) {
+        msgText.textContent = "You Won! 🐸";
+        msgOverlay.className = 'game-message-2048 game-won';
+    }
+    speak('taskCompleted');
+}
+
+function handle2048Loss() {
+    const msgOverlay = document.getElementById('game-message-2048');
+    const msgText = document.getElementById('game-status-text-2048');
+    if (msgOverlay && msgText) {
+        msgText.textContent = "Game Over!";
+        msgOverlay.className = 'game-message-2048 game-over';
+    }
+}
+
+// Keyboard arrow controls
+window.addEventListener('keydown', function(event) {
+    if (!isGamesModalOpen) return;
+    
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+        event.preventDefault();
+        
+        if (event.key === 'ArrowUp') move2048('up');
+        else if (event.key === 'ArrowDown') move2048('down');
+        else if (event.key === 'ArrowLeft') move2048('left');
+        else if (event.key === 'ArrowRight') move2048('right');
+    }
+});
+
+// Expose bindings to window
+window.openGamesModal = openGamesModal;
+window.closeGamesModal = closeGamesModal;
+window.restart2048 = restart2048;
+window.move2048 = move2048;

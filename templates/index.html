@@ -32,8 +32,11 @@
             </button>
         </div>
         <div class="sidebar-middle">
-            <button class="btn-sidebar-item active" onclick="openCalendarModal()" title="Study Calendar">
+            <button id="btn-sidebar-calendar" class="btn-sidebar-item" onclick="openCalendarModal()" title="Study Calendar">
                 <span>📅</span>
+            </button>
+            <button id="btn-sidebar-games" class="btn-sidebar-item" onclick="openGamesModal()" title="Play Mini Games">
+                <span>🎮</span>
             </button>
         </div>
         <div class="sidebar-bottom">
@@ -337,6 +340,79 @@
                         </div>
                         <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Add to Calendar</button>
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Games Modal Overlay (Drawer) -->
+    <div id="games-modal" class="modal-overlay" onclick="if(event.target === this) closeGamesModal()">
+        <div class="modal-content glass-panel calendar-modal-content games-modal-content">
+            <div class="modal-header">
+                <h2>🎮 Cozy Arcade</h2>
+                <button class="btn-close" onclick="closeGamesModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body games-modal-body">
+                <!-- 2048 Game Container -->
+                <div class="game-container-2048">
+                    <div class="game-header-2048">
+                        <div class="game-title-2048">Froggy 2048</div>
+                        <div class="scores-container-2048">
+                            <div class="score-box-2048">
+                                SCORE
+                                <span id="score-2048">0</span>
+                            </div>
+                            <div class="score-box-2048">
+                                BEST
+                                <span id="best-2048">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="game-intro-2048">Join the lily pads to reach the <strong>2048 pad!</strong></p>
+                    
+                    <div class="game-board-wrapper-2048">
+                        <div class="grid-container-2048" id="grid-container-2048">
+                            <div class="grid-cell-2048"></div>
+                            <div class="grid-cell-2048"></div>
+                            <div class="grid-cell-2048"></div>
+                            <div class="grid-cell-2048"></div>
+                            <div class="grid-cell-2048"></div>
+                            <div class="grid-cell-2048"></div>
+                            <div class="grid-cell-2048"></div>
+                            <div class="grid-cell-2048"></div>
+                            <div class="grid-cell-2048"></div>
+                            <div class="grid-cell-2048"></div>
+                            <div class="grid-cell-2048"></div>
+                            <div class="grid-cell-2048"></div>
+                            <div class="grid-cell-2048"></div>
+                            <div class="grid-cell-2048"></div>
+                            <div class="grid-cell-2048"></div>
+                            <div class="grid-cell-2048"></div>
+                        </div>
+                        <div class="tile-container-2048" id="tile-container-2048">
+                            <!-- Dynamic tiles go here -->
+                        </div>
+                        <div class="game-message-2048" id="game-message-2048">
+                            <p id="game-status-text-2048">Game Over!</p>
+                            <div class="lower-2048">
+                                <button class="btn btn-primary" onclick="restart2048()">Try again</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="game-controls-2048">
+                        <button class="btn btn-secondary btn-sm" onclick="restart2048()">New Game</button>
+                        <span class="game-instructions-2048">Use <strong>Arrow Keys</strong> or tap:</span>
+                    </div>
+                    <div class="game-mobile-keys-2048">
+                        <button class="btn-key-2048" onclick="move2048('up')">▲</button>
+                        <div class="key-row-2048">
+                            <button class="btn-key-2048" onclick="move2048('left')">◀</button>
+                            <button class="btn-key-2048" onclick="move2048('down')">▼</button>
+                            <button class="btn-key-2048" onclick="move2048('right')">▶</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
