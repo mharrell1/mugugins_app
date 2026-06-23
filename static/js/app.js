@@ -753,29 +753,17 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Initial render calendar
     renderCalendar();
-
-    // Check calendar minimized preference
-    const isCalendarMinimized = localStorage.getItem('calendar_minimized') === 'true';
-    if (isCalendarMinimized) {
-        const section = document.getElementById('calendar-section');
-        const container = document.getElementById('calendar-content-container');
-        const controls = document.getElementById('calendar-header-controls');
-        const icon = document.getElementById('calendar-toggle-icon');
-        
-        if (section) section.classList.add('minimized');
-        if (container) container.style.display = 'none';
-        if (controls) controls.style.display = 'none';
-        if (icon) icon.textContent = '▲';
-    }
 });
 
 /* --- Category Management Helpers --- */
 function populateCategoryDropdowns() {
     const taskCatSelect = document.getElementById('task-category');
     const filterCatSelect = document.getElementById('filter-category');
+    const calCatSelect = document.getElementById('cal-item-category');
     
     const taskSelected = taskCatSelect.value;
     const filterSelected = filterCatSelect.value;
+    const calSelected = calCatSelect ? calCatSelect.value : '';
     
     const categories = ['School', 'Work', ...customCategories];
     
@@ -794,6 +782,19 @@ function populateCategoryDropdowns() {
         opt.textContent = cat;
         filterCatSelect.appendChild(opt);
     });
+    
+    if (calCatSelect) {
+        calCatSelect.innerHTML = '';
+        categories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat;
+            opt.textContent = cat;
+            calCatSelect.appendChild(opt);
+        });
+        if (categories.includes(calSelected)) {
+            calCatSelect.value = calSelected;
+        }
+    }
     
     if (categories.includes(taskSelected)) {
         taskCatSelect.value = taskSelected;
@@ -959,6 +960,10 @@ function selectCalendarDate(dateStr) {
             clearBtn.textContent = `Clear Filter (${formatReadableDate(dateStr)})`;
         }
     }
+    const calDateInput = document.getElementById('cal-item-date');
+    if (calDateInput) {
+        calDateInput.value = dateStr;
+    }
     filterAndSortTasks();
 }
 
@@ -974,28 +979,84 @@ function clearDateFilter() {
     filterAndSortTasks();
 }
 
-function toggleCalendarMinimize() {
-    const section = document.getElementById('calendar-section');
-    const container = document.getElementById('calendar-content-container');
-    const controls = document.getElementById('calendar-header-controls');
-    const icon = document.getElementById('calendar-toggle-icon');
-    if (!section || !container) return;
-    
-    const isMinimized = section.classList.toggle('minimized');
-    localStorage.setItem('calendar_minimized', isMinimized ? 'true' : 'false');
-    
-    if (isMinimized) {
-        container.style.display = 'none';
-        if (controls) controls.style.display = 'none';
-        if (icon) icon.textContent = '▲';
-    } else {
-        container.style.display = 'flex';
-        if (controls) controls.style.display = 'flex';
-        if (icon) icon.textContent = '▼';
+function openCalendarModal() {
+    const modal = document.getElementById('calendar-modal');
+    if (modal) {
+        modal.classList.add('open');
+        document.getElementById('cal-item-date').value = selectedDateFilter || '2026-06-22';
+        populateCategoryDropdowns();
         renderCalendar();
     }
 }
-window.toggleCalendarMinimize = toggleCalendarMinimize;
+
+function closeCalendarModal() {
+    const modal = document.getElementById('calendar-modal');
+    if (modal) {
+        modal.classList.remove('open');
+    }
+}
+
+async function handleCalendarAdd(event) {
+    event.preventDefault();
+    const titleInput = document.getElementById('cal-item-title');
+    const dateInput = document.getElementById('cal-item-date');
+    const urgencyInput = document.getElementById('cal-item-urgency');
+    const categoryInput = document.getElementById('cal-item-category');
+    
+    const title = titleInput.value.trim();
+    const dueDate = dateInput.value;
+    const urgency = urgencyInput.value;
+    const category = categoryInput.value;
+    
+    if (!title || !dueDate) return;
+    
+    if (isLoggedIn) {
+        try {
+            const response = await fetch('/api/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    title: title,
+                    due_date: dueDate,
+                    category: category,
+                    urgency: urgency
+                })
+            });
+            if (response.ok) {
+                titleInput.value = '';
+                dateInput.value = selectedDateFilter || '2026-06-22';
+                speak('taskAdded');
+                fetchTasks();
+            } else {
+                const errData = await response.json();
+                alert("Error adding calendar item: " + (errData.error || response.statusText));
+            }
+        } catch (err) {
+            console.error("Error adding calendar item:", err);
+        }
+    } else {
+        const tasks = getLocalTasks();
+        const newTask = {
+            id: 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+            title: title,
+            completed: false,
+            created_at: new Date().toISOString(),
+            due_date: dueDate,
+            category: category,
+            urgency: urgency
+        };
+        tasks.unshift(newTask);
+        saveLocalTasks(tasks);
+        titleInput.value = '';
+        dateInput.value = selectedDateFilter || '2026-06-22';
+        speak('taskAdded');
+        fetchTasks();
+    }
+}
+
+window.openCalendarModal = openCalendarModal;
+window.closeCalendarModal = closeCalendarModal;
+window.handleCalendarAdd = handleCalendarAdd;
 
 
 /* --- SQLite Backend Auth Helpers --- */
