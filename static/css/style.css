@@ -660,7 +660,12 @@ input[type=number] {
 .tasks-panel {
     display: flex;
     flex-direction: column;
-    max-height: 480px;
+}
+
+@media (min-width: 1025px) {
+    .timer-panel, .tasks-panel, .mascot-panel {
+        height: 580px;
+    }
 }
 
 .task-stats {
