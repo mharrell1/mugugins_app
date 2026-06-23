@@ -1825,12 +1825,22 @@ input[type=number] {
     background: rgba(135, 195, 143, 0.3);
 }
 
+#calendar-days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+    height: 330px;
+    gap: 6px;
+    margin-top: 8px;
+}
+
 /* Smaller day cells to fit in sidebar */
 #calendar-days-grid .calendar-day-cell {
-    min-height: 60px;
-    aspect-ratio: 1.1 / 1;
-    padding: 6px;
+    min-height: unset;
+    aspect-ratio: unset;
+    padding: 5px;
     border-radius: 10px;
+    height: 100%;
 }
 
 #calendar-days-grid .calendar-day-cell .day-num {
