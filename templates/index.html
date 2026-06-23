@@ -28,9 +28,14 @@
         <!-- Header -->
         <header class="app-header">
             <div class="header-main">
-                <div class="header-logo">
-                    <span class="logo-emoji">🐸</span>
-                    <h1>Froggy Pomodoro</h1>
+                <div class="header-left-group">
+                    <button id="btn-calendar-toggle" class="btn-hamburger" onclick="openCalendarModal()" title="Open Study Calendar" aria-label="Open Study Calendar">
+                        <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+                    </button>
+                    <div class="header-logo">
+                        <span class="logo-emoji">🐸</span>
+                        <h1>Froggy Pomodoro</h1>
+                    </div>
                 </div>
                 <button id="btn-cloud-sync" class="btn btn-sync-status" onclick="openSyncModal()" title="Account Settings">
                     <span class="sync-icon">👤</span>
@@ -200,7 +205,7 @@
                         <!-- Tasks dynamically populated here -->
                     </ul>
        <!-- Calendar Modal Overlay -->
-    <div id="calendar-modal" class="modal-overlay">
+    <div id="calendar-modal" class="modal-overlay" onclick="if(event.target === this) closeCalendarModal()">
         <div class="modal-content glass-panel calendar-modal-content">
             <div class="modal-header">
                 <h2>📅 Lily's Study Calendar</h2>
@@ -329,7 +334,7 @@
     <audio id="sound-forest" loop src="https://assets.mixkit.co/active_storage/sfx/1233/1233-84.wav"></audio>
 
     <!-- Account & Sync Modal -->
-    <div id="sync-modal" class="modal-overlay">
+    <div id="sync-modal" class="modal-overlay" onclick="if(event.target === this) closeSyncModal()">
         <div class="modal-content glass-panel">
             <div class="modal-header">
                 <h2>👤 Account & Sync</h2>
