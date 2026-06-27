@@ -49,18 +49,20 @@ Welcome to **Froggy Pomodoro**, a cozy and aesthetic productivity web applicatio
 * **Guest Mode Fallback**: If not logged in, the app operates in offline Guest Mode, securely storing your tasks in the browser's `localStorage`.
 * **Zero-Config Sync**: Once logged in, your progress is automatically saved to and retrieved from the Flask backend server.
 
-### 🤖 8. frogGPT AI Study Agent (Split-Screen Dashboard!)
+### 🤖 8. frogGPT AI Study Agent (Full-Screen Workspace!)
 * **Personal Study Mascot:** Accessed via the robot/chat icon (`🤖`) in the left panel sidebar.
-* **Full-Screen Split Dashboard:** A spacious two-column workspace:
-  * **Left Column (Chat log):** Talk to Lily, select models, input prompts, and click suggestion pills.
-  * **Right Column (Study Panel):** An interactive viewport for reviewing study resources and loading library decks.
-* **Interactive Flashcards:** View questions, flip cards with a 3D perspective animation to see definitions, and save decks directly to your local library.
-  * **Concept Starring:** Click the star icon (`☆`/`★`) in the top right of any card to mark it. Toggle "Starred Only" to study targeted concepts.
-  * **Card Shuffling:** Shuffle the sequence randomly using a Fisher-Yates generator, or reset back to order.
-* **Interactive Quizzes:** Take multiple-choice quizzes with instant color-coded feedback and final score summaries.
-* **Graded Practice Tests:** Complete True/False, Multiple-Choice, and Short Answer questions with sample solutions and scoring lists.
-* **Multi-Format Document Imports:** Click the paperclip icon (`📎`) to upload `.txt`, `.md`, `.docx` (Word), or `.pdf` notes. Lily compiles and references your files to generate targeted study resources!
-* **Dynamic Multi-Model Switching:** Select from different Gemini model versions (**Gemini 2.5 Flash**, **Gemini 2.5 Pro**, **Gemini 1.5 Flash**, or **Gemini 1.5 Pro**) to bypass rate limits and optimize your tasks.
+* **Full-Screen Workspace with Three-Way Toggle:** A full-viewport layout equipped with a header toggle to customize your workspace:
+  * **💬 Chat Only:** Focuses exclusively on your conversation with Lily for instruction and query inputs (100% width).
+  * **📚 Materials Only:** Expands the interactive study playground (flashcards, quizzes, tests, study guides) to full-screen width for distraction-free learning.
+  * **🔀 Split Screen:** Displays both the chat window and interactive materials side-by-side.
+* **Interactive Study Playgrounds:**
+  * **Interactive Flashcards:** View cards, click to flip with a 3D perspective transition, star cards (`☆`/`★`) to bookmark, and shuffle decks using a Fisher-Yates generator.
+  * **Interactive Quizzes:** Answer multiple-choice questions with color-coded feedback and view final scores.
+  * **Graded Practice Tests:** Complete True/False, Multiple-Choice, and Short Answer exams with sample answers and detailed score lists.
+* **Multi-Format Document Imports:** Click the attachment icon (`📎`) to upload `.txt`, `.md`, `.docx`, or `.pdf` documents to generate personalized study decks.
+* **Daily Quota Counter & Model Selector:**
+  * Displays a daily free quota tracker (**20 queries/day limit**) that resets daily via browser `localStorage`.
+  * Multi-model switching between **Gemini 2.5 Flash** (default) and **Gemini 2.5 Pro** with intelligent error parsing for unsupported models.
 
 ---
 
