@@ -60,7 +60,7 @@ Welcome to **Froggy Pomodoro**, a cozy and aesthetic productivity web applicatio
 * **Interactive Quizzes:** Take multiple-choice quizzes with instant color-coded feedback and final score summaries.
 * **Graded Practice Tests:** Complete True/False, Multiple-Choice, and Short Answer questions with sample solutions and scoring lists.
 * **Multi-Format Document Imports:** Click the paperclip icon (`📎`) to upload `.txt`, `.md`, `.docx` (Word), or `.pdf` notes. Lily compiles and references your files to generate targeted study resources!
-* **Dynamic Multi-Model Switching:** Select from **Gemini 2.5 Flash**, **Gemini 2.5 Pro**, **ChatGPT (GPT-4o)**, or **Claude 3.5 Sonnet** to bypass rate limits and utilize your favorite models.
+* **Dynamic Multi-Model Switching:** Select from different Gemini model versions (**Gemini 2.5 Flash**, **Gemini 2.5 Pro**, **Gemini 1.5 Flash**, or **Gemini 1.5 Pro**) to bypass rate limits and optimize your tasks.
 
 ---
 
@@ -73,7 +73,6 @@ Welcome to **Froggy Pomodoro**, a cozy and aesthetic productivity web applicatio
 * **Audio:** Web Audio API (Synthesized noises and chimes)
 * **Music Integration:** Spotify Web Player Embed API
 * **AI Orchestrations:** Google Agent Development Kit (ADK 2.0) multi-agent coordinator
-* **External LLM Providers:** OpenAI API (GPT-4o) & Anthropic API (Claude 3.5 Sonnet) via direct API connectors
 * **Document Parsers:** `python-docx` (Word Documents) and `pypdf` (PDF files)
 
 ---
