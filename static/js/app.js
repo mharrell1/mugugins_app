@@ -1645,8 +1645,18 @@ async function sendFrogGPTMessage(messageText) {
         }
 
         if (response.ok) {
-            incrementQueryCount();
             const data = await response.json();
+            
+            // If backend reports a quota or rate limit, lock the local quota to 20
+            if (data.response && (data.response.includes("Quota Exceeded") || data.response.includes("Quota exceeded") || data.response.includes("Rate Limit"))) {
+                const quotaData = getQueryCountForToday();
+                quotaData.count = 20;
+                localStorage.setItem('froggpt_query_quota', JSON.stringify(quotaData));
+                updateQueryCounterUI();
+            } else {
+                incrementQueryCount();
+            }
+
             if (data.session_id) {
                 frogGPTSessionId = data.session_id;
             }
@@ -1694,6 +1704,15 @@ async function sendFrogGPTMessage(messageText) {
             playRibbit();
         } else {
             const errData = await response.json().catch(() => ({}));
+            
+            // If server error reports quota limit reached, lock local quota to 20
+            if (errData.error && (errData.error.includes("429") || errData.error.toLowerCase().includes("quota") || errData.error.toLowerCase().includes("resource_exhausted"))) {
+                const quotaData = getQueryCountForToday();
+                quotaData.count = 20;
+                localStorage.setItem('froggpt_query_quota', JSON.stringify(quotaData));
+                updateQueryCounterUI();
+            }
+
             const errorMsgElem = document.createElement('div');
             errorMsgElem.className = 'chat-message ai-message';
             errorMsgElem.innerHTML = `
@@ -2528,19 +2547,72 @@ function incrementQueryCount() {
     updateQueryCounterUI();
 }
 
+let quotaResetInterval = null;
+
 function updateQueryCounterUI() {
     const quotaData = getQueryCountForToday();
     const counterElem = document.getElementById('froggpt-query-counter');
+    const disclaimerElem = document.querySelector('.froggpt-quota-disclaimer');
+    
+    if (quotaResetInterval) {
+        clearInterval(quotaResetInterval);
+        quotaResetInterval = null;
+    }
+
     if (counterElem) {
         counterElem.innerText = `${quotaData.count} / 20`;
+        
         if (quotaData.count >= 20) {
             counterElem.style.color = '#ff595e';
             counterElem.style.background = 'rgba(255, 89, 94, 0.1)';
+            
+            // Start countdown timer until midnight
+            startQuotaCountdown();
         } else {
             counterElem.style.color = 'var(--color-mint)';
             counterElem.style.background = 'rgba(135, 195, 143, 0.1)';
+            if (disclaimerElem) {
+                disclaimerElem.innerHTML = `
+                    <span>⚠️ Daily Free Quota: <strong>20 queries/day</strong></span>
+                    <span id="froggpt-query-counter" style="color: var(--color-mint); font-weight: bold; background: rgba(135,195,143,0.1); padding: 2px 8px; border-radius: 6px;">${quotaData.count} / 20</span>
+                `;
+            }
         }
     }
+}
+
+function startQuotaCountdown() {
+    const disclaimerElem = document.querySelector('.froggpt-quota-disclaimer');
+    if (!disclaimerElem) return;
+
+    function updateCountdown() {
+        const now = new Date();
+        const midnight = new Date();
+        midnight.setHours(24, 0, 0, 0); // next midnight
+        
+        const diffMs = midnight - now;
+        if (diffMs <= 0) {
+            // It's midnight! Reset query counter and refresh UI
+            localStorage.removeItem('froggpt_query_quota');
+            updateQueryCounterUI();
+            return;
+        }
+
+        const hrs = Math.floor(diffMs / (1000 * 60 * 60));
+        const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        const secs = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+        const timeStr = `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        
+        const quotaData = getQueryCountForToday();
+        disclaimerElem.innerHTML = `
+            <span>⚠️ Quota Exhausted! Resets in <strong>${timeStr}</strong></span>
+            <span id="froggpt-query-counter" style="color: #ff595e; font-weight: bold; background: rgba(255,89,94,0.1); padding: 2px 8px; border-radius: 6px;">${quotaData.count} / 20</span>
+        `;
+    }
+
+    updateCountdown();
+    quotaResetInterval = setInterval(updateCountdown, 1000);
 }
 
 window.openFrogGPTModal = openFrogGPTModal;
