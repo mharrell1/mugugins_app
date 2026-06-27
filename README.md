@@ -49,6 +49,19 @@ Welcome to **Froggy Pomodoro**, a cozy and aesthetic productivity web applicatio
 * **Guest Mode Fallback**: If not logged in, the app operates in offline Guest Mode, securely storing your tasks in the browser's `localStorage`.
 * **Zero-Config Sync**: Once logged in, your progress is automatically saved to and retrieved from the Flask backend server.
 
+### 🤖 8. frogGPT AI Study Agent (Split-Screen Dashboard!)
+* **Personal Study Mascot:** Accessed via the robot/chat icon (`🤖`) in the left panel sidebar.
+* **Full-Screen Split Dashboard:** A spacious two-column workspace:
+  * **Left Column (Chat log):** Talk to Lily, select models, input prompts, and click suggestion pills.
+  * **Right Column (Study Panel):** An interactive viewport for reviewing study resources and loading library decks.
+* **Interactive Flashcards:** View questions, flip cards with a 3D perspective animation to see definitions, and save decks directly to your local library.
+  * **Concept Starring:** Click the star icon (`☆`/`★`) in the top right of any card to mark it. Toggle "Starred Only" to study targeted concepts.
+  * **Card Shuffling:** Shuffle the sequence randomly using a Fisher-Yates generator, or reset back to order.
+* **Interactive Quizzes:** Take multiple-choice quizzes with instant color-coded feedback and final score summaries.
+* **Graded Practice Tests:** Complete True/False, Multiple-Choice, and Short Answer questions with sample solutions and scoring lists.
+* **Multi-Format Document Imports:** Click the paperclip icon (`📎`) to upload `.txt`, `.md`, `.docx` (Word), or `.pdf` notes. Lily compiles and references your files to generate targeted study resources!
+* **Dynamic Multi-Model Switching:** Select from **Gemini 2.5 Flash**, **Gemini 2.5 Pro**, **ChatGPT (GPT-4o)**, or **Claude 3.5 Sonnet** to bypass rate limits and utilize your favorite models.
+
 ---
 
 ## 🛠️ Tech Stack
@@ -59,6 +72,9 @@ Welcome to **Froggy Pomodoro**, a cozy and aesthetic productivity web applicatio
 * **Deployment Platform:** Google Cloud Run (containerized server running 24/7)
 * **Audio:** Web Audio API (Synthesized noises and chimes)
 * **Music Integration:** Spotify Web Player Embed API
+* **AI Orchestrations:** Google Agent Development Kit (ADK 2.0) multi-agent coordinator
+* **External LLM Providers:** OpenAI API (GPT-4o) & Anthropic API (Claude 3.5 Sonnet) via direct API connectors
+* **Document Parsers:** `python-docx` (Word Documents) and `pypdf` (PDF files)
 
 ---
 
@@ -120,3 +136,4 @@ To deploy your own copy of the app:
 * `static/images/study_frog.jpg` — Cute generated vector illustration of Lily the study frog.
 * `requirements.txt` — Python libraries (Flask).
 * `.gitignore` — Ignores local databases, caches, and configuration scripts.
+* `study-agent/` — ADK 2.0 multi-agent implementation (coordinator, sub-agents, schemas, tests).
