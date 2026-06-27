@@ -497,11 +497,15 @@ def froggpt_chat():
             for event in events:
                 if getattr(event, 'error', None):
                     err_msg += str(event.error) + " "
+                elif getattr(event, 'error_message', None):
+                    err_msg += str(event.error_message) + " "
                 elif getattr(event, 'status', None) and str(event.status) != "OK":
                     err_msg += str(event.status) + " "
             
             events_str = str(events)
-            if err_msg or "429" in events_str or "quota" in events_str.lower() or "resource_exhausted" in events_str.lower():
+            if "not found" in events_str.lower() or "not supported" in events_str.lower():
+                full_text = f"⚠️ **Model Not Supported or Not Found**\n\n🐸 Lily tried to use the selected model, but it is not available on your API key or is not supported.\n\n**Details**: `{err_msg or 'Model not supported'}`\n\n🔄 **Fix**: Please switch your study model to **Gemini 2.5 Flash** or **Gemini 2.5 Pro** in the dropdown select!"
+            elif err_msg or "429" in events_str or "quota" in events_str.lower() or "resource_exhausted" in events_str.lower():
                 full_text = f"⚠️ **Google AI Studio Quota Exceeded / Rate Limit**\n\n🐸 Lily tried to answer, but the Gemini API free tier quota was reached (`429 Too Many Requests`).\n\n**Details**: {err_msg or 'Free tier limits requests to 20 per minute or daily limits.'}\n\n⏳ **Fix**: Please wait about 45–60 seconds, take a deep breath, and try clicking the button again!"
             else:
                 full_text = f"⚠️ **Google AI Studio Rate Limit / No Response**\n\n🐸 Lily couldn't generate a text response. This usually happens when the Gemini API free tier rate limit (`429 Resource Exhausted`) is reached during a multi-agent workflow.\n\n`Debug Info: {events_str}`\n\n⏳ **Fix**: Please wait about 60 seconds and try asking again!"
