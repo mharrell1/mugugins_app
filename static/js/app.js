@@ -2922,6 +2922,8 @@ function updateQueryCounterUI() {
     const quotaData = getQueryCountForToday();
     const counterElem = document.getElementById('froggpt-query-counter');
     const disclaimerElem = document.querySelector('.froggpt-quota-disclaimer');
+    const noteCounterElem = document.getElementById('note-quota-counter');
+    const noteDisclaimerElem = document.querySelector('.note-quota-disclaimer');
     
     if (quotaResetInterval) {
         clearInterval(quotaResetInterval);
@@ -2930,12 +2932,9 @@ function updateQueryCounterUI() {
 
     if (counterElem) {
         counterElem.innerText = `${quotaData.count} / 20`;
-        
         if (quotaData.count >= 20) {
             counterElem.style.color = '#ff595e';
             counterElem.style.background = 'rgba(255, 89, 94, 0.1)';
-            
-            // Start countdown timer until midnight
             startQuotaCountdown();
         } else {
             counterElem.style.color = 'var(--color-mint)';
@@ -2943,7 +2942,25 @@ function updateQueryCounterUI() {
             if (disclaimerElem) {
                 disclaimerElem.innerHTML = `
                     <span>⚠️ Daily Free Quota: <strong>20 queries/day</strong></span>
-                    <span id="froggpt-query-counter" style="color: var(--color-mint); font-weight: bold; background: rgba(135,195,143,0.1); padding: 2px 8px; border-radius: 6px;">${quotaData.count} / 20</span>
+                    <span id="froggpt-query-counter" style="color: var(--color-mint); font-weight: bold; background: rgba(135, 195, 143, 0.1); padding: 2px 8px; border-radius: 6px;">${quotaData.count} / 20</span>
+                `;
+            }
+        }
+    }
+
+    if (noteCounterElem) {
+        noteCounterElem.innerText = `${quotaData.count} / 20`;
+        if (quotaData.count >= 20) {
+            noteCounterElem.style.color = '#ff595e';
+            noteCounterElem.style.background = 'rgba(255, 89, 94, 0.1)';
+            startQuotaCountdown();
+        } else {
+            noteCounterElem.style.color = 'var(--color-mint)';
+            noteCounterElem.style.background = 'rgba(135, 195, 143, 0.1)';
+            if (noteDisclaimerElem) {
+                noteDisclaimerElem.innerHTML = `
+                    <span>⚠️ Daily Free Quota: <strong>20 calls/day (shared with frogGPT)</strong></span>
+                    <span id="note-quota-counter" style="color: var(--color-mint); font-weight: bold; background: rgba(135, 195, 143, 0.1); padding: 2px 8px; border-radius: 6px;">${quotaData.count} / 20</span>
                 `;
             }
         }
@@ -2952,7 +2969,8 @@ function updateQueryCounterUI() {
 
 function startQuotaCountdown() {
     const disclaimerElem = document.querySelector('.froggpt-quota-disclaimer');
-    if (!disclaimerElem) return;
+    const noteDisclaimerElem = document.querySelector('.note-quota-disclaimer');
+    if (!disclaimerElem && !noteDisclaimerElem) return;
 
     function updateCountdown() {
         const now = new Date();
@@ -2974,10 +2992,19 @@ function startQuotaCountdown() {
         const timeStr = `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
         
         const quotaData = getQueryCountForToday();
-        disclaimerElem.innerHTML = `
-            <span>⚠️ Quota Exhausted! Resets in <strong>${timeStr}</strong></span>
-            <span id="froggpt-query-counter" style="color: #ff595e; font-weight: bold; background: rgba(255,89,94,0.1); padding: 2px 8px; border-radius: 6px;">${quotaData.count} / 20</span>
-        `;
+        
+        if (disclaimerElem) {
+            disclaimerElem.innerHTML = `
+                <span>⚠️ Quota Exhausted! Resets in <strong>${timeStr}</strong></span>
+                <span id="froggpt-query-counter" style="color: #ff595e; font-weight: bold; background: rgba(255,89,94,0.1); padding: 2px 8px; border-radius: 6px;">${quotaData.count} / 20</span>
+            `;
+        }
+        if (noteDisclaimerElem) {
+            noteDisclaimerElem.innerHTML = `
+                <span>⚠️ Quota Exhausted! Resets in <strong>${timeStr}</strong></span>
+                <span id="note-quota-counter" style="color: #ff595e; font-weight: bold; background: rgba(255,89,94,0.1); padding: 2px 8px; border-radius: 6px;">${quotaData.count} / 20</span>
+            `;
+        }
     }
 
     updateCountdown();
@@ -4416,6 +4443,9 @@ function openNoteAgentModal() {
         modal.classList.add('open');
         const btn = document.getElementById('btn-sidebar-notes');
         if (btn) btn.classList.add('active');
+        
+        // Update quota counter UI
+        updateQueryCounterUI();
     }
 }
 
@@ -4567,6 +4597,13 @@ async function transcribeAudio() {
     const fileToSend = noteAudioFile || noteRecordedBlob;
     if (!fileToSend) return;
     
+    // Check quota limit first
+    const quotaData = getQueryCountForToday();
+    if (quotaData.count >= 20) {
+        alert("⚠️ Daily Free Quota Reached (20/20). Please wait for the daily reset or try again tomorrow!");
+        return;
+    }
+    
     const btn = document.getElementById('btn-transcribe-audio');
     const originalText = btn.innerHTML;
     btn.innerHTML = '⏳ Transcribing Audio...';
@@ -4589,6 +4626,9 @@ async function transcribeAudio() {
         if (res.ok) {
             const data = await res.json();
             if (data.success && data.transcript) {
+                // Increment quota count
+                incrementQueryCount();
+                
                 if (textarea) {
                     textarea.value = data.transcript;
                     updateWordCount();
@@ -4635,6 +4675,13 @@ async function summarizeTranscript() {
         return;
     }
     
+    // Check quota limit first
+    const quotaData = getQueryCountForToday();
+    if (quotaData.count >= 20) {
+        alert("⚠️ Daily Free Quota Reached (20/20). Please wait for the daily reset or try again tomorrow!");
+        return;
+    }
+    
     const btn = document.getElementById('btn-summarize-transcript');
     const originalText = btn.innerHTML;
     btn.innerHTML = '⚡ Generating Summary...';
@@ -4662,6 +4709,9 @@ async function summarizeTranscript() {
         if (res.ok) {
             const data = await res.json();
             if (data.success && data.notes) {
+                // Increment quota count
+                incrementQueryCount();
+                
                 generatedNotesMarkdown = data.notes;
                 
                 // Parse markdown preview

@@ -762,6 +762,12 @@
             </div>
             
             <div class="modal-body note-agent-modal-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 20px 0; max-height: 80vh; overflow-y: auto;">
+                <!-- Quota Disclaimer and Counter -->
+                <div class="note-quota-disclaimer" style="grid-column: 1 / span 2; margin-bottom: 4px; padding: 10px 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--panel-border); border-radius: 12px; font-size: 0.82rem; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span>⚠️ Daily Free Quota: <strong>20 calls/day (shared with frogGPT)</strong></span>
+                    <span id="note-quota-counter" style="color: var(--color-mint); font-weight: bold; background: rgba(135,195,143,0.1); padding: 2px 8px; border-radius: 6px;">0 / 20</span>
+                </div>
+                
                 <!-- Left Column: Audio Recording and Uploading -->
                 <div class="recording-column" style="display: flex; flex-direction: column; gap: 16px; background: rgba(0, 0, 0, 0.15); padding: 20px; border-radius: 18px; border: 1px solid var(--panel-border);">
                     <h3 style="color: var(--color-mint); margin-top: 0; font-family: var(--font-heading); font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">🎙️ Record or Upload Audio</h3>
