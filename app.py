@@ -21,7 +21,16 @@ try:
     os.environ['GOOGLE_GENAI_USE_ENTERPRISE'] = 'False'
     os.environ['GOOGLE_GENAI_USE_VERTEXAI'] = 'False'
 
+    # Backup the existing 'app' module to prevent conflict with study-agent/app/ package
+    old_app = sys.modules.get('app')
+    if 'app' in sys.modules:
+        del sys.modules['app']
+
     from app.agent import root_agent
+
+    # Restore the original 'app' module
+    if old_app:
+        sys.modules['app'] = old_app
     from google.adk.runners import Runner
     from google.adk.sessions import InMemorySessionService
 
