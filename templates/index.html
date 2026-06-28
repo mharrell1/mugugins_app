@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Outfit:wght@100..900&family=Quicksand:wght@300..700&display=swap" rel="stylesheet">
     <!-- Main Stylesheet -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=1.0.3">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=1.0.4">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/study_frog.jpg') }}">
 </head>
 <body>
@@ -753,10 +753,11 @@
     <!-- Note Agent Modal Overlay -->
     <div id="note-agent-modal" class="modal-overlay" onclick="if(event.target === this) closeNoteAgentModal()">
         <div class="modal-content glass-panel note-agent-modal-content" style="max-width: 900px; width: 95%;">
-            <div class="modal-header">
-                <div class="froggpt-header-title">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <div class="froggpt-header-title" style="display: flex; align-items: center; gap: 10px;">
                     <span class="froggpt-header-icon">🗒️</span>
                     <h2>frogNote Agent <span class="badge-ai" style="background: rgba(135,195,143,0.15); color: var(--color-mint); font-size: 0.75rem; padding: 2px 8px; border-radius: 6px; margin-left: 8px;">AI Note Taker</span></h2>
+                    <button class="btn btn-secondary btn-sm" onclick="openNotesLibraryDirectly()" style="background: rgba(255,255,255,0.05); border: 1px solid var(--panel-border); color: #fff; padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold; margin-left: 15px;">📂 View Past Notes</button>
                 </div>
                 <button class="btn-close" onclick="closeNoteAgentModal()">&times;</button>
             </div>
@@ -983,6 +984,6 @@
 
     <!-- Marked.js CDN for Markdown Parsing -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="{{ url_for('static', filename='js/app.js') }}?v=1.0.3"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}?v=1.0.4"></script>
 </body>
 </html>

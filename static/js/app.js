@@ -3724,6 +3724,27 @@ function saveGuideToLibrary(guide) {
     alert('Study Guide saved successfully to your Study Materials Library! 📚');
 }
 
+function loadSavedNotes() {
+    try {
+        const n = JSON.parse(localStorage.getItem('saved_note_agent_notes'));
+        return Array.isArray(n) ? n : [];
+    } catch(e) { return []; }
+}
+
+function saveNoteToLocalStorage(note) {
+    let saved = loadSavedNotes();
+    const newNote = {
+        id: `note-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        title: note.title,
+        type: note.type,
+        transcript: note.transcript,
+        notes: note.notes
+    };
+    saved.unshift(newNote);
+    localStorage.setItem('saved_note_agent_notes', JSON.stringify(saved));
+}
+
 function renderStudyGuide(container, guide, isLibraryView = false) {
     const sections = guide.sections || [];
     if (sections.length === 0) {
@@ -4496,6 +4517,58 @@ window.toggleFrogGPTHistoryList = toggleFrogGPTHistoryList;
 window.startNewFrogGPTSession = startNewFrogGPTSession;
 window.loadFrogGPTSession = loadFrogGPTSession;
 
+// Note Library Helper Exports
+window.openNotesLibraryDirectly = function() {
+    closeNoteAgentModal();
+    openFlashcardsLibraryModal();
+    setLibraryTab('notes');
+};
+window.deleteNoteInPanel = deleteNoteInPanel;
+window.exportNoteFromLibrary = async function(noteId, event) {
+    const notesList = loadSavedNotes();
+    const note = notesList.find(n => n.id === noteId);
+    if (!note) return;
+
+    const format = document.getElementById('library-export-format').value;
+    const btn = event ? event.currentTarget : null;
+    const originalText = btn ? btn.innerHTML : '📥 Export File';
+    if (btn) {
+        btn.innerHTML = '⏳ Exporting...';
+        btn.setAttribute('disabled', 'true');
+    }
+
+    try {
+        const res = await fetch('/api/notes/export', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                notes: note.notes,
+                format: format,
+                filename: note.title.replace(/[^a-z0-9_]/gi, '_').toLowerCase()
+            })
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.download_url) {
+                window.location.href = data.download_url;
+            } else {
+                alert("❌ Export failed: " + (data.error || "Unknown error"));
+            }
+        } else {
+            alert("❌ Export server error.");
+        }
+    } catch(e) {
+        console.error(e);
+        alert("❌ Network error exporting note.");
+    } finally {
+        if (btn) {
+            btn.innerHTML = originalText;
+            btn.removeAttribute('disabled');
+        }
+    }
+};
+
 // Cozy Arcade Tab Switcher
 window.switchCozyArcadeGame = function(gameType) {
     document.querySelectorAll('.games-tabs-bar .panel-tab-btn').forEach(btn => {
@@ -5046,13 +5119,25 @@ async function summarizeTranscript() {
                 
                 // Set default generic filename based on type and timestamp
                 const filenameInput = document.getElementById('note-filename');
+                let displayTitle = '';
                 if (filenameInput) {
                     const dateStr = new Date().toISOString().slice(0, 10);
                     filenameInput.value = `${noteType}_notes_${dateStr}`;
+                    displayTitle = `${noteType === 'meeting' ? '👥 Meeting Notes' : '🎓 Lecture Summary'} (${dateStr})`;
+                } else {
+                    displayTitle = `${noteType === 'meeting' ? '👥 Meeting Notes' : '🎓 Lecture Summary'} - ${new Date().toLocaleDateString()}`;
                 }
                 
+                // Save to study materials notes list
+                saveNoteToLocalStorage({
+                    title: displayTitle,
+                    type: noteType,
+                    transcript: textarea.value.trim(),
+                    notes: data.notes
+                });
+
                 enableExportBtn(true);
-                alert("✨ Summary generated successfully!");
+                alert("✨ Summary generated and saved to your Study Library successfully!");
             } else {
                 if (previewContainer) previewContainer.innerHTML = '<span style="color: #ff595e;">Failed to generate notes.</span>';
                 alert("❌ Summary failed: " + (data.error || "Unknown error"));
