@@ -2055,6 +2055,8 @@ function renderInteractiveWidget(containerId, type, data) {
         renderQuiz(container, data);
     } else if (type === 'test_agent') {
         renderPracticeTest(container, data);
+    } else if (type === 'study_guide_agent') {
+        renderStudyGuide(container, data);
     }
 }
 
@@ -2294,7 +2296,7 @@ function saveDeckToLibrary(deck) {
     alert('Deck saved successfully to your Flashcards Library! 📇');
 }
 
-function renderQuiz(container, quiz) {
+function renderQuiz(container, quiz, isLibraryView = false) {
     const questions = quiz.questions || [];
     if (questions.length === 0) {
         container.innerHTML = '<p>No questions available in this quiz.</p>';
@@ -2365,9 +2367,10 @@ function renderQuiz(container, quiz) {
         let summaryHTML = '';
         if (showResults) {
             summaryHTML = `
-                <div class="quiz-results-summary">
-                    <div class="quiz-score-highlight">${score} / ${questions.length}</div>
-                    <p>Ribbit! Review the correct answers and explanations above.</p>
+                <div class="quiz-results-summary" style="text-align:center; padding: 15px 10px; background:rgba(255,255,255,0.03); border:1px solid var(--panel-border); border-radius:12px; margin-bottom:15px;">
+                    <div class="quiz-score-highlight" style="font-size:2rem; font-weight:bold; color:var(--color-mint);">${score} / ${questions.length}</div>
+                    <p style="margin: 5px 0 10px 0; font-size:0.85rem; color:var(--color-text-dim);">Ribbit! Review the correct answers and explanations below.</p>
+                    <button class="btn btn-secondary btn-retry-quiz" style="background:rgba(255,255,255,0.05); border:1px solid var(--panel-border); color:#fff; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; font-weight:bold;">🔄 Retry Quiz</button>
                 </div>
             `;
         } else {
@@ -2380,8 +2383,9 @@ function renderQuiz(container, quiz) {
 
         container.innerHTML = `
             <div class="quiz-widget">
-                <div class="widget-title-bar">
-                    <h4>📝 ${escapeHTML(quiz.title || 'Practice Quiz')}</h4>
+                <div class="widget-title-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+                    <h4 style="margin:0;">📝 ${escapeHTML(quiz.title || 'Practice Quiz')}</h4>
+                    ${!isLibraryView ? `<button class="btn btn-primary btn-sm btn-save-quiz" style="background:var(--color-sage); border:none; color:#fff; font-weight:bold; padding:4px 10px; border-radius:8px; cursor:pointer; font-size:0.78rem;">Save to Library</button>` : ''}
                 </div>
                 ${summaryHTML}
                 <div class="quiz-questions-list">
@@ -2390,7 +2394,12 @@ function renderQuiz(container, quiz) {
             </div>
         `;
 
-        if (!showResults) {
+        if (showResults) {
+            container.querySelector('.btn-retry-quiz').addEventListener('click', () => {
+                userAnswers.fill(null);
+                renderQuizContent(false);
+            });
+        } else {
             container.querySelectorAll('.quiz-option-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const qIdx = parseInt(btn.getAttribute('data-q'));
@@ -2410,12 +2419,25 @@ function renderQuiz(container, quiz) {
                 renderQuizContent(true);
             });
         }
+
+        if (!isLibraryView) {
+            const saveBtn = container.querySelector('.btn-save-quiz');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    saveQuizToLibrary(quiz);
+                    saveBtn.style.background = 'rgba(255,255,255,0.1)';
+                    saveBtn.innerText = 'Saved! ✓';
+                    saveBtn.setAttribute('disabled', 'true');
+                });
+            }
+        }
     };
 
     renderQuizContent(false);
 }
 
-function renderPracticeTest(container, test) {
+function renderPracticeTest(container, test, isLibraryView = false) {
     const tfQuestions = test.true_false || [];
     const mcQuestions = test.multiple_choice || [];
     const saQuestions = test.short_answer || [];
@@ -2571,9 +2593,10 @@ function renderPracticeTest(container, test) {
         let summaryHTML = '';
         if (showResults) {
             summaryHTML = `
-                <div class="quiz-results-summary">
-                    <div class="quiz-score-highlight">${score} / ${maxScore}</div>
-                    <p>Ribbit! Section A & B score calculated. Self-grade Section C using the guidelines below!</p>
+                <div class="quiz-results-summary" style="text-align:center; padding: 15px 10px; background:rgba(255,255,255,0.03); border:1px solid var(--panel-border); border-radius:12px; margin-bottom:15px;">
+                    <div class="quiz-score-highlight" style="font-size:2rem; font-weight:bold; color:var(--color-mint);">${score} / ${maxScore}</div>
+                    <p style="margin: 5px 0 10px 0; font-size:0.85rem; color:var(--color-text-dim);">You completed the test! Review your answers below.</p>
+                    <button class="btn btn-secondary btn-retry-test" style="background:rgba(255,255,255,0.05); border:1px solid var(--panel-border); color:#fff; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; font-weight:bold;">🔄 Retry Test</button>
                 </div>
             `;
         } else {
@@ -2586,8 +2609,9 @@ function renderPracticeTest(container, test) {
 
         container.innerHTML = `
             <div class="quiz-widget">
-                <div class="widget-title-bar">
-                    <h4>🧪 ${escapeHTML(test.title || 'Practice Test')}</h4>
+                <div class="widget-title-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+                    <h4 style="margin:0;">🧪 ${escapeHTML(test.title || 'Practice Test')}</h4>
+                    ${!isLibraryView ? `<button class="btn btn-primary btn-sm btn-save-test" style="background:var(--color-sage); border:none; color:#fff; font-weight:bold; padding:4px 10px; border-radius:8px; cursor:pointer; font-size:0.78rem;">Save to Library</button>` : ''}
                 </div>
                 ${summaryHTML}
                 <div class="test-sections">
@@ -2598,7 +2622,14 @@ function renderPracticeTest(container, test) {
             </div>
         `;
 
-        if (!showResults) {
+        if (showResults) {
+            container.querySelector('.btn-retry-test').addEventListener('click', () => {
+                tfAnswers.fill(null);
+                mcAnswers.fill(null);
+                saAnswers.fill('');
+                renderTestContent(false);
+            });
+        } else {
             container.querySelectorAll('[data-tf-q]').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const qIdx = parseInt(btn.getAttribute('data-tf-q'));
@@ -2636,6 +2667,19 @@ function renderPracticeTest(container, test) {
                 renderTestContent(true);
             });
         }
+
+        if (!isLibraryView) {
+            const saveBtn = container.querySelector('.btn-save-test');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    saveTestToLibrary(test);
+                    saveBtn.style.background = 'rgba(255,255,255,0.1)';
+                    saveBtn.innerText = 'Saved! ✓';
+                    saveBtn.setAttribute('disabled', 'true');
+                });
+            }
+        }
     };
 
     renderTestContent(false);
@@ -2660,50 +2704,128 @@ function loadWidgetFromWindow(key, type) {
     }
 }
 
-let activeLibraryDeckId = null;
+let currentLibraryTab = 'flashcards';
+let activeLibraryItemId = null;
+
+function setLibraryTab(tab) {
+    currentLibraryTab = tab;
+    activeLibraryItemId = null;
+    showLibraryInPanel();
+}
+window.setLibraryTab = setLibraryTab;
+
+function selectLibraryItem(itemId) {
+    activeLibraryItemId = itemId;
+    showLibraryInPanel();
+}
+window.selectLibraryItem = selectLibraryItem;
+
+function deleteQuizInPanel(quizId) {
+    if (confirm("Are you sure you want to delete this quiz from your library?")) {
+        let quizzes = loadSavedQuizzes();
+        quizzes = quizzes.filter(q => q.id !== quizId);
+        localStorage.setItem('saved_quizzes', JSON.stringify(quizzes));
+        activeLibraryItemId = null;
+        showLibraryInPanel();
+    }
+}
+window.deleteQuizInPanel = deleteQuizInPanel;
+
+function deleteTestInPanel(testId) {
+    if (confirm("Are you sure you want to delete this test from your library?")) {
+        let tests = loadSavedTests();
+        tests = tests.filter(t => t.id !== testId);
+        localStorage.setItem('saved_tests', JSON.stringify(tests));
+        activeLibraryItemId = null;
+        showLibraryInPanel();
+    }
+}
+window.deleteTestInPanel = deleteTestInPanel;
+
+function deleteGuideInPanel(guideId) {
+    if (confirm("Are you sure you want to delete this study guide from your library?")) {
+        let guides = loadSavedGuides();
+        guides = guides.filter(g => g.id !== guideId);
+        localStorage.setItem('saved_study_guides', JSON.stringify(guides));
+        activeLibraryItemId = null;
+        showLibraryInPanel();
+    }
+}
+window.deleteGuideInPanel = deleteGuideInPanel;
 
 function showLibraryInPanel(searchQuery = '') {
     const container = document.getElementById('froggpt-study-content');
     if (!container) return;
 
-    let savedDecks = loadFlashcardSets();
+    let items = [];
+    if (currentLibraryTab === 'flashcards') {
+        items = loadFlashcardSets();
+    } else if (currentLibraryTab === 'quizzes') {
+        items = loadSavedQuizzes();
+    } else if (currentLibraryTab === 'tests') {
+        items = loadSavedTests();
+    } else if (currentLibraryTab === 'guides') {
+        items = loadSavedGuides();
+    }
 
-    const filteredDecks = savedDecks.filter(deck => 
-        deck.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        (deck.description && deck.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    const filteredItems = items.filter(item => 
+        (item.title && item.title.toLowerCase().includes(searchQuery.toLowerCase())) || 
+        (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
-    if (filteredDecks.length > 0) {
-        if (!activeLibraryDeckId || !filteredDecks.some(d => d.id === activeLibraryDeckId)) {
-            activeLibraryDeckId = filteredDecks[0].id;
+    if (filteredItems.length > 0) {
+        if (!activeLibraryItemId || !filteredItems.some(i => i.id === activeLibraryItemId)) {
+            activeLibraryItemId = filteredItems[0].id;
         }
     } else {
-        activeLibraryDeckId = null;
+        activeLibraryItemId = null;
     }
+
+    // Tabs HTML
+    const tabsHTML = `
+        <div class="library-tabs" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px;">
+            <button class="tab-btn btn-sm" onclick="setLibraryTab('flashcards')" style="padding: 6px; font-size: 0.72rem; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; color: ${currentLibraryTab === 'flashcards' ? '#fff' : 'var(--color-text-dim)'}; background: ${currentLibraryTab === 'flashcards' ? 'var(--color-sage)' : 'none'};">📇 Cards</button>
+            <button class="tab-btn btn-sm" onclick="setLibraryTab('quizzes')" style="padding: 6px; font-size: 0.72rem; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; color: ${currentLibraryTab === 'quizzes' ? '#fff' : 'var(--color-text-dim)'}; background: ${currentLibraryTab === 'quizzes' ? 'var(--color-sage)' : 'none'};">📝 Quizzes</button>
+            <button class="tab-btn btn-sm" onclick="setLibraryTab('tests')" style="padding: 6px; font-size: 0.72rem; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; color: ${currentLibraryTab === 'tests' ? '#fff' : 'var(--color-text-dim)'}; background: ${currentLibraryTab === 'tests' ? 'var(--color-sage)' : 'none'};">✍️ Tests</button>
+            <button class="tab-btn btn-sm" onclick="setLibraryTab('guides')" style="padding: 6px; font-size: 0.72rem; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; color: ${currentLibraryTab === 'guides' ? '#fff' : 'var(--color-text-dim)'}; background: ${currentLibraryTab === 'guides' ? 'var(--color-sage)' : 'none'};">📚 Guides</button>
+        </div>
+    `;
 
     let leftHTML = `
         <div class="library-left-col">
             <div style="display:flex; flex-direction:column; gap:6px;">
-                <label style="font-weight:600; color:var(--color-sage); font-size:0.75rem; text-transform:uppercase;">Search Decks</label>
-                <input type="text" id="library-deck-search" placeholder="Search sets..." value="${searchQuery}" oninput="handleLibrarySearch(this.value)" style="padding:8px 12px; border-radius:8px; border:1px solid var(--panel-border); background:rgba(0,0,0,0.2); color:#fff; font-family:var(--font-body); font-size:0.85rem; outline:none; width: 100%;">
+                <label style="font-weight:600; color:var(--color-sage); font-size:0.75rem; text-transform:uppercase;">Search Materials</label>
+                <input type="text" id="library-deck-search" placeholder="Search..." value="${searchQuery}" oninput="showLibraryInPanel(this.value)" style="padding:8px 12px; border-radius:8px; border:1px solid var(--panel-border); background:rgba(0,0,0,0.2); color:#fff; font-family:var(--font-body); font-size:0.85rem; outline:none; width: 100%;">
             </div>
-            
+            ${tabsHTML}
             <div style="display:flex; flex-direction:column; gap:8px; flex-grow:1; overflow-y:auto; margin-top:8px;">
     `;
 
-    if (filteredDecks.length === 0) {
+    if (filteredItems.length === 0) {
         leftHTML += `
             <div style="text-align:center; color:var(--color-text-dim); font-size:0.85rem; padding:20px 0;">
-                No sets found, ribbit.
+                No materials found, ribbit.
             </div>
         `;
     } else {
-        filteredDecks.forEach(deck => {
-            const isSelected = deck.id === activeLibraryDeckId;
+        filteredItems.forEach(item => {
+            const isSelected = item.id === activeLibraryItemId;
+            let infoText = '';
+            if (currentLibraryTab === 'flashcards') {
+                infoText = `${item.cards.length} Cards`;
+            } else if (currentLibraryTab === 'quizzes') {
+                infoText = `${item.questions.length} Questions`;
+            } else if (currentLibraryTab === 'tests') {
+                const totalQ = (item.true_false || []).length + (item.multiple_choice || []).length + (item.short_answer || []).length;
+                infoText = `${totalQ} Questions`;
+            } else if (currentLibraryTab === 'guides') {
+                infoText = `${(item.sections || []).length} Sections`;
+            }
+
             leftHTML += `
-                <div class="library-set-item ${isSelected ? 'selected' : ''}" onclick="selectLibraryDeck('${deck.id}')">
-                    <h4>${escapeHTML(deck.title)}</h4>
-                    <p>${deck.cards.length} Cards</p>
+                <div class="library-set-item ${isSelected ? 'selected' : ''}" onclick="selectLibraryItem('${item.id}')">
+                    <h4>${escapeHTML(item.title)}</h4>
+                    <p>${infoText}</p>
                 </div>
             `;
         });
@@ -2715,47 +2837,79 @@ function showLibraryInPanel(searchQuery = '') {
     `;
 
     let rightHTML = `
-        <div class="library-right-col">
+        <div class="library-right-col" style="display: flex; flex-direction: column;">
     `;
 
-    if (!activeLibraryDeckId) {
+    if (!activeLibraryItemId) {
+        let typeLabel = 'Study Materials';
+        if (currentLibraryTab === 'flashcards') typeLabel = 'Study Set';
+        else if (currentLibraryTab === 'quizzes') typeLabel = 'Quiz';
+        else if (currentLibraryTab === 'tests') typeLabel = 'Practice Test';
+        else if (currentLibraryTab === 'guides') typeLabel = 'Study Guide';
+
         rightHTML += `
             <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; flex-grow:1; text-align:center; color:var(--color-text-dim); padding:40px 20px;">
-                <span style="font-size:2.5rem; margin-bottom:12px;">📇</span>
-                <h3>Select a Study Set</h3>
-                <p style="font-size:0.9rem; max-width:280px; margin-top:4px;">Select a set to preview terms, study, or edit, or click 'Create Set' to start a new one!</p>
+                <span style="font-size:2.5rem; margin-bottom:12px;">📂</span>
+                <h3>Select a ${typeLabel}</h3>
+                <p style="font-size:0.9rem; max-width:280px; margin-top:4px;">Choose an item from the left column to preview, practice, or study!</p>
             </div>
         `;
     } else {
-        const deck = savedDecks.find(d => d.id === activeLibraryDeckId);
-        const cardRowsHTML = deck.cards.map(card => `
-            <div class="library-card-item">
-                <span class="library-card-term">${escapeHTML(card.question || card.term || '')}</span>
-                <span class="library-card-def">${escapeHTML(card.answer || card.definition || '')}</span>
-            </div>
-        `).join('');
+        const item = items.find(i => i.id === activeLibraryItemId);
+        if (currentLibraryTab === 'flashcards') {
+            const cardRowsHTML = item.cards.map(card => `
+                <div class="library-card-item">
+                    <span class="library-card-term">${escapeHTML(card.question || card.term || '')}</span>
+                    <span class="library-card-def">${escapeHTML(card.answer || card.definition || '')}</span>
+                </div>
+            `).join('');
 
-        rightHTML += `
-            <div style="display:flex; flex-direction:column; gap:8px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px;">
-                <h3 style="color:var(--color-cream); font-family:var(--font-heading); font-size:1.35rem; margin:0;">${escapeHTML(deck.title)}</h3>
-                <p style="color:var(--color-text-dim); font-size:0.85rem; margin:0; line-height:1.4;">${escapeHTML(deck.description || 'No description provided.')}</p>
+            rightHTML += `
+                <div style="display:flex; flex-direction:column; gap:8px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px;">
+                    <h3 style="color:var(--color-cream); font-family:var(--font-heading); font-size:1.35rem; margin:0;">${escapeHTML(item.title)}</h3>
+                    <p style="color:var(--color-text-dim); font-size:0.85rem; margin:0; line-height:1.4;">${escapeHTML(item.description || 'No description provided.')}</p>
+                    
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+                        <button class="btn btn-primary btn-sm" onclick="playFlashcardDeckInPanel('${item.id}')" style="background:var(--color-sage); border:none; color:#fff; font-weight:bold; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:4px;">📇 Study Cards</button>
+                        <button class="btn btn-primary btn-sm" onclick="playMatchingFromLibrary('${item.id}')" style="background:var(--color-mint); border:none; color:var(--bg-dark); font-weight:bold; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:4px;">🍃 Play Match</button>
+                        <button class="btn btn-primary btn-sm" onclick="playBlasterFromLibrary('${item.id}')" style="background:var(--color-mint); border:none; color:var(--bg-dark); font-weight:bold; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:4px;">💧 Play Blaster</button>
+                        <button class="btn btn-secondary btn-sm" onclick="openAddSetModal('${item.id}')" style="background:rgba(255,255,255,0.05); border:1px solid var(--panel-border); color:#fff; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:4px;">✏️ Edit Set</button>
+                        <button class="btn btn-secondary btn-sm" onclick="deleteFlashcardDeckInPanel('${item.id}')" style="background:rgba(200, 70, 70, 0.15); border:1px solid rgba(200, 70, 70, 0.3); color:#f7a3a3; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:4px;">🗑️ Delete</button>
+                    </div>
+                </div>
                 
-                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
-                    <button class="btn btn-primary btn-sm" onclick="playFlashcardDeckInPanel('${deck.id}')" style="background:var(--color-sage); border:none; color:#fff; font-weight:bold; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:4px;">📇 Study Cards</button>
-                    <button class="btn btn-primary btn-sm" onclick="playMatchingFromLibrary('${deck.id}')" style="background:var(--color-mint); border:none; color:var(--bg-dark); font-weight:bold; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:4px;">🍃 Play Match</button>
-                    <button class="btn btn-primary btn-sm" onclick="playBlasterFromLibrary('${deck.id}')" style="background:var(--color-mint); border:none; color:var(--bg-dark); font-weight:bold; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:4px;">💧 Play Blaster</button>
-                    <button class="btn btn-secondary btn-sm" onclick="openAddSetModal('${deck.id}')" style="background:rgba(255,255,255,0.05); border:1px solid var(--panel-border); color:#fff; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:4px;">✏️ Edit Set</button>
-                    <button class="btn btn-secondary btn-sm" onclick="deleteFlashcardDeckInPanel('${deck.id}')" style="background:rgba(200, 70, 70, 0.15); border:1px solid rgba(200, 70, 70, 0.3); color:#f7a3a3; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:4px;">🗑️ Delete</button>
+                <div style="flex-grow:1; display:flex; flex-direction:column; gap:8px; margin-top:4px; overflow:hidden;">
+                    <label style="font-weight:600; color:var(--color-sage); font-size:0.75rem; text-transform:uppercase; margin-bottom:2px;">Cards in this Set (${item.cards.length})</label>
+                    <div class="library-card-list">
+                        ${cardRowsHTML}
+                    </div>
                 </div>
-            </div>
-            
-            <div style="flex-grow:1; display:flex; flex-direction:column; gap:8px; margin-top:4px; overflow:hidden;">
-                <label style="font-weight:600; color:var(--color-sage); font-size:0.75rem; text-transform:uppercase; margin-bottom:2px;">Cards in this Set (${deck.cards.length})</label>
-                <div class="library-card-list">
-                    ${cardRowsHTML}
+            `;
+        } else if (currentLibraryTab === 'quizzes') {
+            rightHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px; margin-bottom: 12px;">
+                    <h3 style="color:var(--color-cream); font-family:var(--font-heading); font-size:1.25rem; margin:0;">📝 Practice Quiz</h3>
+                    <button class="btn btn-secondary btn-sm" onclick="deleteQuizInPanel('${item.id}')" style="background:rgba(200, 70, 70, 0.15); border:1px solid rgba(200, 70, 70, 0.3); color:#f7a3a3; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:4px;">🗑️ Delete</button>
                 </div>
-            </div>
-        `;
+                <div id="library-interactive-container" style="flex-grow:1; overflow-y:auto; padding-right:4px;"></div>
+            `;
+        } else if (currentLibraryTab === 'tests') {
+            rightHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px; margin-bottom: 12px;">
+                    <h3 style="color:var(--color-cream); font-family:var(--font-heading); font-size:1.25rem; margin:0;">✍️ Practice Test</h3>
+                    <button class="btn btn-secondary btn-sm" onclick="deleteTestInPanel('${item.id}')" style="background:rgba(200, 70, 70, 0.15); border:1px solid rgba(200, 70, 70, 0.3); color:#f7a3a3; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:4px;">🗑️ Delete</button>
+                </div>
+                <div id="library-interactive-container" style="flex-grow:1; overflow-y:auto; padding-right:4px;"></div>
+            `;
+        } else if (currentLibraryTab === 'guides') {
+            rightHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px; margin-bottom: 12px;">
+                    <h3 style="color:var(--color-cream); font-family:var(--font-heading); font-size:1.25rem; margin:0;">📚 Study Guide</h3>
+                    <button class="btn btn-secondary btn-sm" onclick="deleteGuideInPanel('${item.id}')" style="background:rgba(200, 70, 70, 0.15); border:1px solid rgba(200, 70, 70, 0.3); color:#f7a3a3; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:4px;">🗑️ Delete</button>
+                </div>
+                <div id="library-interactive-container" style="flex-grow:1; overflow-y:auto; padding-right:4px;"></div>
+            `;
+        }
     }
 
     rightHTML += `
@@ -2765,9 +2919,9 @@ function showLibraryInPanel(searchQuery = '') {
     container.innerHTML = `
         <div class="flashcards-library-container" style="display:flex; flex-direction:column; gap:12px; height:100%; overflow:hidden;">
             <div class="player-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
-                <h3 style="margin:0; font-family:var(--font-heading); color:var(--color-cream); display:flex; align-items:center; gap:6px;">📂 Flashcard Library</h3>
+                <h3 style="margin:0; font-family:var(--font-heading); color:var(--color-cream); display:flex; align-items:center; gap:6px;">📂 Study Materials Library</h3>
                 <div style="display:flex; gap:8px;">
-                    <button class="btn btn-primary btn-sm" onclick="openAddSetModal()" style="background:var(--color-mint); border:none; color:var(--bg-dark); font-weight:bold; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:0.8rem;">➕ Create Set</button>
+                    ${currentLibraryTab === 'flashcards' ? `<button class="btn btn-primary btn-sm" onclick="openAddSetModal()" style="background:var(--color-mint); border:none; color:var(--bg-dark); font-weight:bold; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:0.8rem;">➕ Create Set</button>` : ''}
                     <button class="btn btn-secondary btn-sm" onclick="showStudyPanelPlaceholder()" style="background:rgba(255,255,255,0.05); border:1px solid var(--panel-border); color:#fff; padding:6px 12px; border-radius:8px; cursor:pointer;">Close</button>
                 </div>
             </div>
@@ -2778,6 +2932,29 @@ function showLibraryInPanel(searchQuery = '') {
             </div>
         </div>
     `;
+
+    // Hook search keyup/change input handling
+    const searchInput = document.getElementById('library-deck-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            showLibraryInPanel(e.target.value);
+        });
+    }
+
+    // Render interactive widgets if relevant
+    if (activeLibraryItemId) {
+        const item = items.find(i => i.id === activeLibraryItemId);
+        const subContainer = document.getElementById('library-interactive-container');
+        if (subContainer && item) {
+            if (currentLibraryTab === 'quizzes') {
+                renderQuiz(subContainer, item, true);
+            } else if (currentLibraryTab === 'tests') {
+                renderPracticeTest(subContainer, item, true);
+            } else if (currentLibraryTab === 'guides') {
+                renderStudyGuide(subContainer, item, true);
+            }
+        }
+    }
 }
 
 function playFlashcardDeckInPanel(deckId) {
@@ -2830,8 +3007,8 @@ function showStudyPanelPlaceholder() {
         <div class="study-placeholder">
             <div class="placeholder-mascot">📚🐸</div>
             <h3>Interactive Study Dashboard</h3>
-            <p>Ask frogGPT to generate <strong>flashcards</strong>, a <strong>quiz</strong>, or a <strong>practice test</strong>, and they will load here interactively.</p>
-            <button class="btn btn-primary" onclick="showLibraryInPanel()" style="margin-top: 15px; background: var(--color-sage); border-color: var(--panel-border); font-size: 0.85rem; padding: 6px 14px; border-radius: 8px; cursor:pointer; color: #fff;">📂 Open Flashcards Library</button>
+            <p>Ask frogGPT to generate <strong>flashcards</strong>, a <strong>quiz</strong>, a <strong>practice test</strong>, or a <strong>study guide</strong>, and they will load here interactively.</p>
+            <button class="btn btn-primary" onclick="showLibraryInPanel()" style="margin-top: 15px; background: var(--color-sage); border-color: var(--panel-border); font-size: 0.85rem; padding: 6px 14px; border-radius: 8px; cursor:pointer; color: #fff;">📂 Open Study Library</button>
         </div>
     `;
 }
@@ -3484,6 +3661,149 @@ function loadFlashcardSets() {
         localStorage.setItem('saved_flashcard_decks', JSON.stringify(savedDecks));
     }
     return savedDecks;
+}
+
+/* --- Study Materials Quizzes, Tests, and Guides loaders and savers --- */
+function loadSavedQuizzes() {
+    try {
+        const q = JSON.parse(localStorage.getItem('saved_quizzes'));
+        return Array.isArray(q) ? q : [];
+    } catch(e) { return []; }
+}
+function loadSavedTests() {
+    try {
+        const t = JSON.parse(localStorage.getItem('saved_tests'));
+        return Array.isArray(t) ? t : [];
+    } catch(e) { return []; }
+}
+function loadSavedGuides() {
+    try {
+        const g = JSON.parse(localStorage.getItem('saved_study_guides'));
+        return Array.isArray(g) ? g : [];
+    } catch(e) { return []; }
+}
+
+function saveQuizToLibrary(quiz) {
+    let saved = loadSavedQuizzes();
+    const newQuiz = {
+        id: `quiz-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        title: quiz.title || 'Untitled Quiz',
+        questions: quiz.questions || []
+    };
+    saved.push(newQuiz);
+    localStorage.setItem('saved_quizzes', JSON.stringify(saved));
+    alert('Quiz saved successfully to your Study Materials Library! 📝');
+}
+function saveTestToLibrary(test) {
+    let saved = loadSavedTests();
+    const newTest = {
+        id: `test-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        title: test.title || 'Untitled Practice Test',
+        true_false: test.true_false || [],
+        multiple_choice: test.multiple_choice || [],
+        short_answer: test.short_answer || []
+    };
+    saved.push(newTest);
+    localStorage.setItem('saved_tests', JSON.stringify(saved));
+    alert('Practice Test saved successfully to your Study Materials Library! ✍️');
+}
+function saveGuideToLibrary(guide) {
+    let saved = loadSavedGuides();
+    const newGuide = {
+        id: `guide-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        title: guide.title || 'Untitled Study Guide',
+        overview: guide.overview || '',
+        sections: guide.sections || [],
+        summary: guide.summary || ''
+    };
+    saved.push(newGuide);
+    localStorage.setItem('saved_study_guides', JSON.stringify(saved));
+    alert('Study Guide saved successfully to your Study Materials Library! 📚');
+}
+
+function renderStudyGuide(container, guide, isLibraryView = false) {
+    const sections = guide.sections || [];
+    if (sections.length === 0) {
+        container.innerHTML = '<p>No sections available in this study guide.</p>';
+        return;
+    }
+
+    const sectionsHTML = sections.map((sect, sIdx) => {
+        const conceptsHTML = sect.key_concepts ? sect.key_concepts.map(c => `
+            <div class="guide-concept-item" style="background: rgba(255,255,255,0.03); border: 1px solid var(--panel-border); border-radius: 10px; padding: 10px; margin-top: 6px;">
+                <div style="font-weight: bold; color: var(--color-mint); font-size: 0.85rem;">🔑 ${escapeHTML(c.term)}</div>
+                <div style="font-size: 0.8rem; margin-top: 4px; line-height: 1.4; color: var(--color-cream);">${escapeHTML(c.definition)}</div>
+                ${c.example ? `<div style="font-size: 0.75rem; color: var(--color-sage); margin-top: 4px; font-style: italic;">e.g., ${escapeHTML(c.example)}</div>` : ''}
+            </div>
+        `).join('') : '';
+
+        const bulletsHTML = sect.bullet_points ? sect.bullet_points.map(bp => `
+            <li style="font-size: 0.82rem; color: var(--color-cream); margin-top: 4px; line-height: 1.4;">${escapeHTML(bp)}</li>
+        `).join('') : '';
+
+        return `
+            <div class="guide-section" style="border-left: 2px solid var(--color-sage); padding-left: 14px; margin-bottom: 20px;">
+                <h4 style="margin: 0 0 6px 0; color: var(--color-cream); font-family: var(--font-heading); font-size: 1.05rem;">${sIdx + 1}. ${escapeHTML(sect.heading)}</h4>
+                <p style="font-size: 0.82rem; color: var(--color-text-dim); margin: 0 0 10px 0; line-height: 1.4;">${escapeHTML(sect.summary)}</p>
+                
+                ${sect.key_concepts && sect.key_concepts.length > 0 ? `
+                    <div style="margin-top: 8px;">
+                        <span style="font-size: 0.72rem; font-weight: 700; color: var(--color-sage); text-transform: uppercase;">Key Concepts</span>
+                        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 2px;">
+                            ${conceptsHTML}
+                        </div>
+                    </div>
+                ` : ''}
+                
+                ${sect.bullet_points && sect.bullet_points.length > 0 ? `
+                    <div style="margin-top: 10px;">
+                        <span style="font-size: 0.72rem; font-weight: 700; color: var(--color-sage); text-transform: uppercase;">Important Notes</span>
+                        <ul style="margin: 4px 0 0 0; padding-left: 16px;">
+                            ${bulletsHTML}
+                        </ul>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <div class="study-guide-widget" style="display: flex; flex-direction: column; gap: 16px; text-align: left;">
+            <div class="widget-title-bar" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px; margin-bottom: 12px;">
+                <h4 style="margin:0;">📚 ${escapeHTML(guide.title)}</h4>
+                ${!isLibraryView ? `<button class="btn btn-primary btn-sm btn-save-guide" style="background: var(--color-sage); border-color: var(--panel-border); color: #fff; font-size: 0.78rem; padding: 4px 10px; border-radius: 8px; cursor: pointer;">Save to Library</button>` : ''}
+            </div>
+            
+            <p class="guide-overview" style="font-style: italic; color: var(--color-text-dim); line-height: 1.4; margin: 0;">${escapeHTML(guide.overview)}</p>
+            
+            <div class="guide-sections-list" style="display: flex; flex-direction: column; gap: 20px; margin-top: 10px;">
+                ${sectionsHTML}
+            </div>
+            
+            ${guide.summary ? `
+                <div class="guide-summary-box" style="margin-top: 15px; padding: 12px; background: rgba(135,195,143,0.06); border: 1px solid rgba(135,195,143,0.15); border-radius: 12px; text-align: left;">
+                    <div style="font-weight: bold; color: var(--color-mint); font-size: 0.85rem; margin-bottom: 4px;">📝 Key Takeaways</div>
+                    <p style="font-size: 0.82rem; color: var(--color-cream); margin: 0; line-height: 1.4;">${escapeHTML(guide.summary)}</p>
+                </div>
+            ` : ''}
+        </div>
+    `;
+
+    if (!isLibraryView) {
+        const saveBtn = container.querySelector('.btn-save-guide');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                saveGuideToLibrary(guide);
+                saveBtn.style.background = 'rgba(255,255,255,0.1)';
+                saveBtn.innerText = 'Saved! ✓';
+                saveBtn.setAttribute('disabled', 'true');
+            });
+        }
+    }
 }
 
 function initGamesMenu() {
