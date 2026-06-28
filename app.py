@@ -1,7 +1,7 @@
 import os
 import sys
 import sqlite3
-from flask import Flask, render_template, request, jsonify, session, g
+from flask import Flask, render_template, request, jsonify, session, g, send_file
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # Initialize ADK frogGPT runner if study-agent is available
@@ -63,7 +63,19 @@ try:
 except Exception as e:
     import traceback
     traceback.print_exc()
-    print(f"Failed to initialize frogGPT ADK Runner: {e}")
+# Initialize Google GenAI client directly using API key
+genai_client = None
+try:
+    from google import genai
+    from google.genai import types
+    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+    if api_key:
+        genai_client = genai.Client(api_key=api_key)
+    else:
+        genai_client = genai.Client()
+    print("Successfully initialized Google GenAI Client.")
+except Exception as e:
+    print(f"Failed to initialize Google GenAI Client: {e}")
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'froggy-secret-key-12345')
@@ -649,6 +661,154 @@ def froggpt_session_history(session_id):
         return jsonify({'success': True, 'events': history})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# --- AI Note Taking Agent endpoints ---
+@app.route('/api/notes/transcribe', methods=['POST'])
+def notes_transcribe():
+    if not genai_client:
+        return jsonify({'error': 'Gemini API client not initialized. Ensure GEMINI_API_KEY is configured.'}), 500
+
+    if 'audio' not in request.files:
+        return jsonify({'error': 'No audio file provided'}), 400
+
+    audio_file = request.files['audio']
+    if audio_file.filename == '':
+        return jsonify({'error': 'No selected audio file'}), 400
+
+    try:
+        audio_bytes = audio_file.read()
+        mime_type = audio_file.mimetype or 'audio/webm'
+        
+        # Call Gemini to transcribe
+        response = genai_client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=[
+                types.Part.from_bytes(
+                    data=audio_bytes,
+                    mime_type=mime_type
+                ),
+                "Please transcribe the following audio recording with extremely high fidelity. Output the transcription directly, word-for-word, without any additional explanations, notes, or introductions."
+            ]
+        )
+        
+        transcript = response.text or ""
+        return jsonify({'success': True, 'transcript': transcript})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/notes/summarize', methods=['POST'])
+def notes_summarize():
+    if not genai_client:
+        return jsonify({'error': 'Gemini API client not initialized. Ensure GEMINI_API_KEY is configured.'}), 500
+
+    data = request.get_json() or {}
+    transcript = data.get('transcript', '').strip()
+    note_type = data.get('type', 'lecture').strip().lower()
+
+    if not transcript:
+        return jsonify({'error': 'No transcript content provided'}), 400
+
+    try:
+        if note_type == 'meeting':
+            prompt = (
+                "Review the following transcript of a meeting. Generate highly structured meeting notes. "
+                "Include:\n"
+                "1. A concise overview/executive summary of the meeting.\n"
+                "2. Key decisions made.\n"
+                "3. Bullet points of main discussion items.\n"
+                "4. A clear, actionable checklist of action items, specifying who is responsible if mentioned.\n\n"
+                f"Transcript:\n{transcript}"
+            )
+        else:
+            prompt = (
+                "Review the following transcript of a lecture. Generate a structured lecture summary. "
+                "Include:\n"
+                "1. A general introduction of the core topic.\n"
+                "2. Detailed key concepts and definitions explained.\n"
+                "3. Crucial take-aways and insights in structured bullet points.\n"
+                "4. Follow-up study questions or topics for research.\n\n"
+                f"Transcript:\n{transcript}"
+            )
+
+        response = genai_client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt
+        )
+        notes = response.text or ""
+        return jsonify({'success': True, 'notes': notes})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/notes/export', methods=['POST'])
+def notes_export():
+    data = request.get_json() or {}
+    notes = data.get('notes', '').strip()
+    filename = data.get('filename', 'my_notes').strip()
+    export_format = data.get('format', 'pdf').strip().lower()
+
+    if not notes:
+        return jsonify({'error': 'No notes content provided'}), 400
+
+    safe_filename = "".join(c if c.isalnum() or c in "-_ " else "_" for c in filename).strip()
+    if not safe_filename:
+        safe_filename = "notes_summary"
+
+    try:
+        # Import study-agent tools
+        from app.tools import export_as_pdf, export_as_docx
+        
+        home = os.path.expanduser('~')
+        local_notes_dir = os.path.join(home, 'Documents', 'Note-Agent', 'Notes')
+        
+        is_local = os.path.exists(os.path.join(home, 'Documents'))
+        if is_local:
+            target_dir = local_notes_dir
+        else:
+            target_dir = "/tmp"
+
+        os.makedirs(target_dir, exist_ok=True)
+
+        if export_format == 'pdf':
+            res = export_as_pdf(notes, safe_filename, target_dir)
+        elif export_format == 'docx':
+            res = export_as_docx(notes, safe_filename, target_dir)
+        else:
+            return jsonify({'error': 'Invalid format. Supported formats: pdf, docx'}), 400
+
+        if res.get('status') == 'success':
+            file_path = res.get('file_path')
+            
+            session['last_export_path'] = file_path
+            session['last_export_name'] = os.path.basename(file_path)
+            
+            return jsonify({
+                'success': True,
+                'file_path': file_path,
+                'filename': os.path.basename(file_path),
+                'saved_locally': is_local,
+                'local_path': local_notes_dir if is_local else None
+            })
+        else:
+            return jsonify({'error': res.get('file_path') or 'Export failed'}), 500
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/notes/download', methods=['GET'])
+def notes_download():
+    file_path = session.get('last_export_path')
+    file_name = session.get('last_export_name', 'notes.pdf')
+    
+    if not file_path or not os.path.exists(file_path):
+        return "No export found or file has expired. Please export the notes again.", 404
+        
+    return send_file(file_path, as_attachment=True, download_name=file_name)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)

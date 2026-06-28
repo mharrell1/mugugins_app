@@ -3728,4 +3728,12 @@ input[type=number] {
     }
 }
 
+/* --- Note Agent Recording Wave Animation --- */
+@keyframes bounceWave {
+    0% { transform: scaleY(1); }
+    100% { transform: scaleY(0.2); }
+}
 
+.wave-bar {
+    transform-origin: bottom;
+}

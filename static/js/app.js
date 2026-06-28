@@ -4396,3 +4396,394 @@ window.playBlasterFromLibrary = function(deckId) {
     }
     setupBlasterGame();
 };
+
+/* --- Note Agent (AI Note Taker) Logic --- */
+let noteMediaRecorder = null;
+let noteAudioChunks = [];
+let noteIsRecording = false;
+let noteTimerInterval = null;
+let noteRecordedBlob = null;
+let noteAudioFile = null;
+let generatedNotesMarkdown = "";
+
+function openNoteAgentModal() {
+    closeCalendarModal();
+    closeGamesModal();
+    closeFrogGPTModal();
+    
+    const modal = document.getElementById('note-agent-modal');
+    if (modal) {
+        modal.classList.add('open');
+        const btn = document.getElementById('btn-sidebar-notes');
+        if (btn) btn.classList.add('active');
+    }
+}
+
+function closeNoteAgentModal() {
+    const modal = document.getElementById('note-agent-modal');
+    if (modal) {
+        modal.classList.remove('open');
+    }
+    const btn = document.getElementById('btn-sidebar-notes');
+    if (btn) btn.classList.remove('active');
+    
+    // Stop recording if active
+    if (noteIsRecording) {
+        stopAudioRecording(true); // silent stop
+    }
+}
+
+async function toggleAudioRecording() {
+    if (!noteIsRecording) {
+        await startAudioRecording();
+    } else {
+        stopAudioRecording(false);
+    }
+}
+
+async function startAudioRecording() {
+    noteAudioChunks = [];
+    noteRecordedBlob = null;
+    noteAudioFile = null;
+    
+    const recordStatus = document.getElementById('record-status');
+    const recordTimer = document.getElementById('record-timer');
+    const recordWave = document.getElementById('record-wave');
+    const micBtn = document.getElementById('btn-record-mic');
+    const fileNameSpan = document.getElementById('audio-file-name');
+    
+    if (fileNameSpan) fileNameSpan.textContent = '';
+    
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        noteMediaRecorder = new MediaRecorder(stream);
+        
+        noteMediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                noteAudioChunks.push(event.data);
+            }
+        };
+        
+        noteMediaRecorder.onstop = () => {
+            noteRecordedBlob = new Blob(noteAudioChunks, { type: 'audio/webm' });
+            if (recordStatus) recordStatus.textContent = 'Audio recorded successfully! Ready to transcribe.';
+            enableTranscribeBtn(true);
+        };
+        
+        noteMediaRecorder.start();
+        noteIsRecording = true;
+        
+        // Update UI
+        if (micBtn) {
+            micBtn.style.background = '#ff595e';
+            micBtn.style.boxShadow = '0 0 20px rgba(255,89,94,0.4)';
+        }
+        if (recordStatus) recordStatus.textContent = 'Recording live...';
+        if (recordWave) recordWave.classList.remove('hidden');
+        if (recordTimer) {
+            recordTimer.style.display = 'block';
+            recordTimer.textContent = '00:00';
+        }
+        
+        let seconds = 0;
+        noteTimerInterval = setInterval(() => {
+            seconds++;
+            const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
+            const secs = String(seconds % 60).padStart(2, '0');
+            if (recordTimer) recordTimer.textContent = `${mins}:${secs}`;
+        }, 1000);
+        
+    } catch (err) {
+        console.error("Error accessing microphone:", err);
+        alert("Microphone access denied or not supported in this browser. You can still upload local audio files below!");
+    }
+}
+
+function stopAudioRecording(silent = false) {
+    if (noteMediaRecorder && noteMediaRecorder.state !== 'inactive') {
+        noteMediaRecorder.stop();
+        // Stop stream tracks
+        noteMediaRecorder.stream.getTracks().forEach(track => track.stop());
+    }
+    
+    noteIsRecording = false;
+    
+    const recordTimer = document.getElementById('record-timer');
+    const recordWave = document.getElementById('record-wave');
+    const micBtn = document.getElementById('btn-record-mic');
+    const recordStatus = document.getElementById('record-status');
+    
+    if (noteTimerInterval) {
+        clearInterval(noteTimerInterval);
+    }
+    
+    if (micBtn) {
+        micBtn.style.background = 'var(--color-mint)';
+        micBtn.style.boxShadow = '0 0 15px rgba(135,195,143,0.3)';
+    }
+    if (recordWave) recordWave.classList.add('hidden');
+    if (recordTimer) recordTimer.style.display = 'none';
+    if (!silent && recordStatus) {
+        recordStatus.textContent = 'Processing recording...';
+    }
+}
+
+function handleAudioFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    noteAudioFile = file;
+    noteRecordedBlob = null; // Clear previous recording
+    
+    const fileNameSpan = document.getElementById('audio-file-name');
+    const recordStatus = document.getElementById('record-status');
+    
+    if (fileNameSpan) fileNameSpan.textContent = `📁 Selected: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
+    if (recordStatus) recordStatus.textContent = 'Audio file selected. Ready to transcribe.';
+    
+    enableTranscribeBtn(true);
+}
+
+function enableTranscribeBtn(enabled) {
+    const btn = document.getElementById('btn-transcribe-audio');
+    if (!btn) return;
+    
+    if (enabled) {
+        btn.removeAttribute('disabled');
+        btn.style.background = 'var(--color-mint)';
+        btn.style.borderColor = 'var(--color-mint)';
+        btn.style.color = 'var(--bg-dark)';
+        btn.style.cursor = 'pointer';
+    } else {
+        btn.setAttribute('disabled', 'true');
+        btn.style.background = 'rgba(255,255,255,0.05)';
+        btn.style.borderColor = 'var(--panel-border)';
+        btn.style.color = 'var(--color-text-dim)';
+        btn.style.cursor = 'not-allowed';
+    }
+}
+
+async function transcribeAudio() {
+    const fileToSend = noteAudioFile || noteRecordedBlob;
+    if (!fileToSend) return;
+    
+    const btn = document.getElementById('btn-transcribe-audio');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ Transcribing Audio...';
+    btn.setAttribute('disabled', 'true');
+    btn.style.cursor = 'not-allowed';
+    
+    const formData = new FormData();
+    const filename = noteAudioFile ? noteAudioFile.name : 'recorded_audio.webm';
+    formData.append('audio', fileToSend, filename);
+    
+    const textarea = document.getElementById('note-transcript-text');
+    if (textarea) textarea.placeholder = 'Lily is listening and transcribing your audio... Please wait.';
+    
+    try {
+        const res = await fetch('/api/notes/transcribe', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.transcript) {
+                if (textarea) {
+                    textarea.value = data.transcript;
+                    updateWordCount();
+                }
+                alert("✨ Audio transcribed successfully!");
+            } else {
+                alert("❌ Transcription failed: " + (data.error || "Unknown error"));
+            }
+        } else {
+            const errData = await res.json().catch(() => ({}));
+            alert("❌ Transcription failed: " + (errData.error || res.statusText));
+        }
+    } catch (e) {
+        console.error("Transcription error:", e);
+        alert("❌ Error connecting to transcription server. Ensure your Gemini API Key is configured.");
+    } finally {
+        btn.innerHTML = originalText;
+        enableTranscribeBtn(true);
+    }
+}
+
+function updateWordCount() {
+    const textarea = document.getElementById('note-transcript-text');
+    const wordCountBadge = document.getElementById('word-count-badge');
+    if (!textarea || !wordCountBadge) return;
+    
+    const text = textarea.value.trim();
+    const count = text ? text.split(/\s+/).length : 0;
+    wordCountBadge.textContent = `${count} word${count === 1 ? '' : 's'}`;
+}
+
+// Hook word count input
+document.addEventListener('DOMContentLoaded', () => {
+    const textarea = document.getElementById('note-transcript-text');
+    if (textarea) {
+        textarea.addEventListener('input', updateWordCount);
+    }
+});
+
+async function summarizeTranscript() {
+    const textarea = document.getElementById('note-transcript-text');
+    if (!textarea || !textarea.value.trim()) {
+        alert("Please record/upload audio or enter some text in the transcript review area first.");
+        return;
+    }
+    
+    const btn = document.getElementById('btn-summarize-transcript');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⚡ Generating Summary...';
+    btn.setAttribute('disabled', 'true');
+    btn.style.cursor = 'not-allowed';
+    
+    const noteTypeEl = document.querySelector('input[name="note-agent-type"]:checked');
+    const noteType = noteTypeEl ? noteTypeEl.value : 'lecture';
+    
+    const previewContainer = document.getElementById('note-summary-preview');
+    if (previewContainer) {
+        previewContainer.innerHTML = '<span style="color: var(--color-mint); font-style: italic;">🐸 Lily is analyzing your notes and formatting them... Please hold on!</span>';
+    }
+    
+    try {
+        const res = await fetch('/api/notes/summarize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                transcript: textarea.value.trim(),
+                type: noteType
+            })
+        });
+        
+        if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.notes) {
+                generatedNotesMarkdown = data.notes;
+                
+                // Parse markdown preview
+                let html = '';
+                if (typeof marked !== 'undefined') {
+                    html = marked.parse(data.notes);
+                } else {
+                    html = `<pre style="white-space: pre-wrap; font-family: inherit;">${escapeHTML(data.notes)}</pre>`;
+                }
+                
+                if (previewContainer) previewContainer.innerHTML = html;
+                
+                // Set default generic filename based on type and timestamp
+                const filenameInput = document.getElementById('note-filename');
+                if (filenameInput) {
+                    const dateStr = new Date().toISOString().slice(0, 10);
+                    filenameInput.value = `${noteType}_notes_${dateStr}`;
+                }
+                
+                enableExportBtn(true);
+                alert("✨ Summary generated successfully!");
+            } else {
+                if (previewContainer) previewContainer.innerHTML = '<span style="color: #ff595e;">Failed to generate notes.</span>';
+                alert("❌ Summary failed: " + (data.error || "Unknown error"));
+            }
+        } else {
+            const errData = await res.json().catch(() => ({}));
+            if (previewContainer) previewContainer.innerHTML = '<span style="color: #ff595e;">Failed to generate notes.</span>';
+            alert("❌ Summary failed: " + (errData.error || res.statusText));
+        }
+    } catch (e) {
+        console.error("Summarization error:", e);
+        if (previewContainer) previewContainer.innerHTML = '<span style="color: #ff595e;">Error generating notes.</span>';
+        alert("❌ Error connecting to summary server.");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.removeAttribute('disabled');
+        btn.style.cursor = 'pointer';
+    }
+}
+
+function enableExportBtn(enabled) {
+    const btn = document.getElementById('btn-export-notes');
+    if (!btn) return;
+    
+    if (enabled && generatedNotesMarkdown) {
+        btn.removeAttribute('disabled');
+        btn.style.background = 'var(--color-mint)';
+        btn.style.borderColor = 'var(--color-mint)';
+        btn.style.color = 'var(--bg-dark)';
+        btn.style.cursor = 'pointer';
+    } else {
+        btn.setAttribute('disabled', 'true');
+        btn.style.background = 'rgba(255,255,255,0.05)';
+        btn.style.borderColor = 'var(--panel-border)';
+        btn.style.color = 'var(--color-text-dim)';
+        btn.style.cursor = 'not-allowed';
+    }
+}
+
+async function exportNotes() {
+    if (!generatedNotesMarkdown) return;
+    
+    const filenameEl = document.getElementById('note-filename');
+    const formatEl = document.getElementById('note-format');
+    
+    const filename = filenameEl ? filenameEl.value.trim() : 'study_notes';
+    const format = formatEl ? formatEl.value : 'pdf';
+    
+    const btn = document.getElementById('btn-export-notes');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ Exporting...';
+    btn.setAttribute('disabled', 'true');
+    btn.style.cursor = 'not-allowed';
+    
+    try {
+        const res = await fetch('/api/notes/export', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                notes: generatedNotesMarkdown,
+                filename: filename,
+                format: format
+            })
+        });
+        
+        if (res.ok) {
+            const data = await res.json();
+            if (data.success) {
+                // If running locally, let them know it saved to their Documents
+                let successMsg = "🎉 Notes successfully exported!";
+                if (data.saved_locally) {
+                    successMsg += `\n\nSaved locally on your Mac at:\n/Documents/Note-Agent/Notes/${data.filename}`;
+                } else {
+                    successMsg += "\n\nDownloading file directly to your browser...";
+                }
+                alert(successMsg);
+                
+                // Trigger file download in browser
+                window.location.href = '/api/notes/download';
+            } else {
+                alert("❌ Export failed: " + (data.error || "Unknown error"));
+            }
+        } else {
+            const errData = await res.json().catch(() => ({}));
+            alert("❌ Export failed: " + (errData.error || res.statusText));
+        }
+    } catch (e) {
+        console.error("Export error:", e);
+        alert("❌ Error connecting to export server.");
+    } finally {
+        btn.innerHTML = originalText;
+        enableExportBtn(true);
+    }
+}
+
+// Window exports
+window.openNoteAgentModal = openNoteAgentModal;
+window.closeNoteAgentModal = closeNoteAgentModal;
+window.toggleAudioRecording = toggleAudioRecording;
+window.handleAudioFileSelect = handleAudioFileSelect;
+window.transcribeAudio = transcribeAudio;
+window.summarizeTranscript = summarizeTranscript;
+window.exportNotes = exportNotes;
+window.updateWordCount = updateWordCount;

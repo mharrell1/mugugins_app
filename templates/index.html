@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Outfit:wght@100..900&family=Quicksand:wght@300..700&display=swap" rel="stylesheet">
     <!-- Main Stylesheet -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=1.0.2">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=1.0.3">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/study_frog.jpg') }}">
 </head>
 <body>
@@ -43,6 +43,9 @@
             </button>
             <button id="btn-sidebar-flashcards" class="btn-sidebar-item" onclick="openFlashcardsLibraryModal()" title="Flashcards Library">
                 <span>📇</span>
+            </button>
+            <button id="btn-sidebar-notes" class="btn-sidebar-item" onclick="openNoteAgentModal()" title="frogNote Agent">
+                <span>🗒️</span>
             </button>
         </div>
         <div class="sidebar-bottom">
@@ -747,6 +750,127 @@
         </div>
     </div>
 
+    <!-- Note Agent Modal Overlay -->
+    <div id="note-agent-modal" class="modal-overlay" onclick="if(event.target === this) closeNoteAgentModal()">
+        <div class="modal-content glass-panel note-agent-modal-content" style="max-width: 900px; width: 95%;">
+            <div class="modal-header">
+                <div class="froggpt-header-title">
+                    <span class="froggpt-header-icon">🗒️</span>
+                    <h2>frogNote Agent <span class="badge-ai" style="background: rgba(135,195,143,0.15); color: var(--color-mint); font-size: 0.75rem; padding: 2px 8px; border-radius: 6px; margin-left: 8px;">AI Note Taker</span></h2>
+                </div>
+                <button class="btn-close" onclick="closeNoteAgentModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body note-agent-modal-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 20px 0; max-height: 80vh; overflow-y: auto;">
+                <!-- Left Column: Audio Recording and Uploading -->
+                <div class="recording-column" style="display: flex; flex-direction: column; gap: 16px; background: rgba(0, 0, 0, 0.15); padding: 20px; border-radius: 18px; border: 1px solid var(--panel-border);">
+                    <h3 style="color: var(--color-mint); margin-top: 0; font-family: var(--font-heading); font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">🎙️ Record or Upload Audio</h3>
+                    
+                    <!-- Recorder Box -->
+                    <div class="recorder-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px 10px; border: 2px dashed rgba(255,255,255,0.1); border-radius: 14px; background: rgba(0,0,0,0.1); text-align: center; gap: 12px; position: relative;">
+                        <!-- Recording Animation Waves -->
+                        <div id="record-wave" class="record-wave-container hidden" style="display: flex; gap: 4px; height: 30px; align-items: center; margin-bottom: 8px;">
+                            <div class="wave-bar" style="width: 4px; height: 10px; background: #ff595e; border-radius: 2px; animation: bounceWave 0.8s ease infinite alternate;"></div>
+                            <div class="wave-bar" style="width: 4px; height: 25px; background: #ff595e; border-radius: 2px; animation: bounceWave 0.8s ease infinite alternate 0.2s;"></div>
+                            <div class="wave-bar" style="width: 4px; height: 15px; background: #ff595e; border-radius: 2px; animation: bounceWave 0.8s ease infinite alternate 0.4s;"></div>
+                            <div class="wave-bar" style="width: 4px; height: 28px; background: #ff595e; border-radius: 2px; animation: bounceWave 0.8s ease infinite alternate 0.1s;"></div>
+                            <div class="wave-bar" style="width: 4px; height: 8px; background: #ff595e; border-radius: 2px; animation: bounceWave 0.8s ease infinite alternate 0.3s;"></div>
+                        </div>
+                        
+                        <!-- Pulse mic button -->
+                        <button id="btn-record-mic" class="mic-button" onclick="toggleAudioRecording()" style="width: 70px; height: 70px; border-radius: 50%; border: none; background: var(--color-mint); color: var(--bg-dark); font-size: 1.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(135,195,143,0.3); transition: all 0.3s;">🎙️</button>
+                        
+                        <div id="record-status" style="font-weight: bold; font-size: 0.9rem; color: var(--color-cream);">Click to start recording</div>
+                        <div id="record-timer" style="font-family: monospace; font-size: 1.1rem; color: var(--color-text-dim); display: none;">00:00</div>
+                    </div>
+                    
+                    <div style="text-align: center; color: var(--color-text-dim); font-size: 0.8rem; font-weight: bold; margin: 4px 0;">— OR —</div>
+                    
+                    <!-- File Upload Box -->
+                    <div class="audio-upload-box" style="display: flex; flex-direction: column; gap: 8px;">
+                        <label for="audio-file-upload" style="font-size: 0.75rem; font-weight: 700; color: var(--color-sage); text-transform: uppercase;">Upload Local Audio File</label>
+                        <div style="position: relative;">
+                            <input type="file" id="audio-file-upload" accept="audio/*" onchange="handleAudioFileSelect(event)" style="display: none;">
+                            <button class="btn btn-secondary" onclick="document.getElementById('audio-file-upload').click()" style="width: 100%; font-size: 0.82rem; padding: 10px; border-radius: 10px; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                                📁 <span>Choose audio file...</span>
+                            </button>
+                        </div>
+                        <span id="audio-file-name" style="font-size: 0.75rem; color: var(--color-mint); text-align: center; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px;"></span>
+                    </div>
+
+                    <!-- Process Audio Button -->
+                    <button id="btn-transcribe-audio" class="btn btn-primary" onclick="transcribeAudio()" disabled style="width: 100%; font-weight: bold; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.05); color: var(--color-text-dim); border: 1px solid var(--panel-border); font-size: 0.9rem; cursor: not-allowed;">
+                        ✨ Transcribe Audio
+                    </button>
+                    
+                    <!-- Transcription Area -->
+                    <div style="display: flex; flex-direction: column; gap: 6px; flex: 1;">
+                        <label for="note-transcript-text" style="font-size: 0.75rem; font-weight: 700; color: var(--color-sage); text-transform: uppercase; display: flex; justify-content: space-between;">
+                            <span>📝 Transcript Review</span>
+                            <span id="word-count-badge" style="color: var(--color-text-dim); text-transform: none;">0 words</span>
+                        </label>
+                        <textarea id="note-transcript-text" placeholder="Your transcribed text will appear here. You can also type or paste content directly to summarize..." style="width: 100%; flex: 1; min-height: 120px; background: rgba(0,0,0,0.2); border: 1px solid var(--panel-border); border-radius: 12px; padding: 10px; color: var(--color-cream); font-family: var(--font-body); font-size: 0.82rem; resize: vertical; outline: none; line-height: 1.4;"></textarea>
+                    </div>
+                </div>
+
+                <!-- Right Column: Note Configuration, Summarization & Export -->
+                <div class="summary-column" style="display: flex; flex-direction: column; gap: 16px; background: rgba(0, 0, 0, 0.15); padding: 20px; border-radius: 18px; border: 1px solid var(--panel-border);">
+                    <h3 style="color: var(--color-mint); margin-top: 0; font-family: var(--font-heading); font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">✨ Summarize & Export</h3>
+                    
+                    <!-- Note Type Selector -->
+                    <div class="note-type-box" style="display: flex; flex-direction: column; gap: 6px;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: var(--color-sage); text-transform: uppercase;">Choose Note Type</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <label class="note-type-label" style="display: flex; align-items: center; gap: 8px; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--panel-border); border-radius: 10px; cursor: pointer; font-size: 0.82rem; color: var(--color-cream);">
+                                <input type="radio" name="note-agent-type" value="meeting" checked style="accent-color: var(--color-mint);">
+                                <span>👥 Meeting Notes</span>
+                            </label>
+                            <label class="note-type-label" style="display: flex; align-items: center; gap: 8px; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--panel-border); border-radius: 10px; cursor: pointer; font-size: 0.82rem; color: var(--color-cream);">
+                                <input type="radio" name="note-agent-type" value="lecture" style="accent-color: var(--color-mint);">
+                                <span>🎓 Lecture Summary</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Summarize Action Button -->
+                    <button id="btn-summarize-transcript" class="btn btn-primary" onclick="summarizeTranscript()" style="width: 100%; font-weight: bold; padding: 12px; border-radius: 12px; font-size: 0.9rem; background: var(--color-mint); border: none; color: var(--bg-dark); box-shadow: 0 4px 12px rgba(135,195,143,0.2);">
+                        ⚡ Generate Notes & Summary
+                    </button>
+                    
+                    <!-- Output Preview Container -->
+                    <div style="display: flex; flex-direction: column; gap: 6px; flex: 1;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: var(--color-sage); text-transform: uppercase;">📋 Generated Output Preview</label>
+                        <div id="note-summary-preview" style="width: 100%; flex: 1; min-height: 120px; background: rgba(0,0,0,0.25); border: 1px solid var(--panel-border); border-radius: 12px; padding: 12px; color: var(--color-cream); font-size: 0.82rem; overflow-y: auto; line-height: 1.4; text-align: left; max-height: 250px;">
+                            <span style="color: var(--color-text-dim); font-style: italic;">No summary generated yet. Transcribe audio and click generate.</span>
+                        </div>
+                    </div>
+
+                    <!-- Export and Export details -->
+                    <div class="export-box" style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;">
+                        <div class="form-group" style="display: flex; flex-direction: column; gap: 4px;">
+                            <label for="note-filename" style="font-size: 0.72rem; font-weight: 700; color: var(--color-sage); text-transform: uppercase;">Export Filename</label>
+                            <input type="text" id="note-filename" placeholder="e.g. biology_lecture_notes" style="width: 100%; padding: 8px 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--panel-border); border-radius: 10px; color: var(--color-cream); font-size: 0.82rem; outline: none;">
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px; align-items: center;">
+                            <div class="form-group" style="display: flex; flex-direction: column; gap: 4px;">
+                                <label for="note-format" style="font-size: 0.72rem; font-weight: 700; color: var(--color-sage); text-transform: uppercase;">Format</label>
+                                <select id="note-format" style="width: 100%; padding: 8px; background: rgba(0,0,0,0.2); border: 1px solid var(--panel-border); border-radius: 10px; color: var(--color-cream); font-size: 0.82rem; outline: none; cursor: pointer;">
+                                    <option value="pdf" selected>📄 PDF Document (.pdf)</option>
+                                    <option value="docx">📝 Word Document (.docx)</option>
+                                </select>
+                            </div>
+                            
+                            <button id="btn-export-notes" class="btn btn-primary" onclick="exportNotes()" disabled style="font-weight: bold; padding: 10px; border-radius: 10px; font-size: 0.85rem; margin-top: 18px; background: rgba(255,255,255,0.05); color: var(--color-text-dim); border: 1px solid var(--panel-border); cursor: not-allowed;">
+                                📥 Export & Save
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Add/Edit Task Modal -->
     <div id="add-task-modal" class="modal-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(18, 34, 30, 0.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 1800; display: flex; justify-content: center; align-items: center;">
         <div class="modal-card" style="background: #152c24; border: 1px solid var(--panel-border); width: 90%; max-width: 480px; border-radius: 24px; padding: 24px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; gap: 16px;">
@@ -853,6 +977,6 @@
 
     <!-- Marked.js CDN for Markdown Parsing -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="{{ url_for('static', filename='js/app.js') }}?v=1.0.2"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}?v=1.0.3"></script>
 </body>
 </html>
