@@ -66,6 +66,34 @@
             <p class="tagline">Hop your way to productivity with Lily the study frog!</p>
         </header>
 
+        <!-- Mascot Stats Card (top of dashboard) -->
+        <section class="mascot-card" style="background: var(--panel-bg); border: 1px solid var(--panel-border); backdrop-filter: blur(12px); border-radius: 20px; padding: 16px 24px; display: grid; grid-template-columns: 2.5fr 1fr; gap: 20px; align-items: center; box-shadow: 0 8px 32px var(--color-shadow); margin-bottom: 8px;">
+            <div class="mascot-content" style="display: flex; align-items: center; gap: 16px;">
+                <div class="mascot-img-container" style="position: relative; width: 60px; height: 60px; flex-shrink: 0;">
+                    <img src="{{ url_for('static', filename='images/study_frog.jpg') }}" alt="Lily the Study Frog" class="mascot-img" id="lily-mascot" style="width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--color-sage); object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+                    <div class="mascot-glow" style="position: absolute; top: -3px; left: -3px; right: -3px; bottom: -3px; border-radius: 50%; background: radial-gradient(circle, var(--color-mint) 0%, transparent 70%); opacity: 0.15; z-index: -1;"></div>
+                </div>
+                <div class="speech-bubble" style="background: rgba(244, 235, 217, 0.95); color: #1a322b; padding: 10px 16px; border-radius: 14px; position: relative; font-size: 0.9rem; font-weight: 500; line-height: 1.4; box-shadow: 0 2px 8px rgba(0,0,0,0.1); width: 100%; text-align: left;">
+                    <div class="speech-arrow" style="content: ''; position: absolute; left: -8px; top: 20px; width: 0; height: 0; border-top: 8px solid transparent; border-bottom: 8px solid transparent; border-right: 8px solid rgba(244, 235, 217, 0.95);"></div>
+                    <p id="mascot-message">Ribbit! Welcome back, study partner! Let's get tasks done and learn today!</p>
+                </div>
+            </div>
+            <div class="pond-stats" style="display: flex; justify-content: space-around; border-left: 1px solid rgba(244, 235, 217, 0.15); padding-left: 16px;">
+                <div class="stat-box" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                    <span class="stat-val" id="stats-active" style="font-family: var(--font-heading); font-size: 1.6rem; font-weight: 700; color: var(--color-mint);">0</span>
+                    <span class="stat-lbl" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-dim); margin-top: 2px;">Active Tasks</span>
+                </div>
+                <div class="stat-box" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                    <span class="stat-val" id="stats-urgent" style="font-family: var(--font-heading); font-size: 1.6rem; font-weight: 700; color: var(--color-mint);">0</span>
+                    <span class="stat-lbl" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-dim); margin-top: 2px;">High Urgency</span>
+                </div>
+                <div class="stat-box" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                    <span class="stat-val" id="stats-completed" style="font-family: var(--font-heading); font-size: 1.6rem; font-weight: 700; color: var(--color-mint);">0%</span>
+                    <span class="stat-lbl" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-dim); margin-top: 2px;">Completed</span>
+                </div>
+            </div>
+        </section>
+
         <!-- Main Layout Grid -->
         <main class="app-grid">
             
@@ -75,48 +103,49 @@
                     <h2>⏰ Pond Timer</h2>
                 </div>
                 
-                <div class="timer-settings">
-                    <div class="settings-group">
-                        <label for="work-sessions-input">Work Sessions</label>
-                        <div class="number-control">
-                            <button type="button" class="btn-step" onclick="adjustCount('work-sessions-input', -1)">-</button>
-                            <input type="number" id="work-sessions-input" value="4" min="1" max="10">
-                            <button type="button" class="btn-step" onclick="adjustCount('work-sessions-input', 1)">+</button>
+                <div id="timer-inner-content">
+                    <div class="timer-settings">
+                        <div class="settings-group">
+                            <label for="work-sessions-input">Work Sessions</label>
+                            <div class="number-control">
+                                <button type="button" class="btn-step" onclick="adjustCount('work-sessions-input', -1)">-</button>
+                                <input type="number" id="work-sessions-input" value="4" min="1" max="10">
+                                <button type="button" class="btn-step" onclick="adjustCount('work-sessions-input', 1)">+</button>
+                            </div>
+                        </div>
+                        <div class="settings-group">
+                            <label for="session-length">Work Duration (min)</label>
+                            <input type="number" id="session-length" value="25" min="1" max="60" class="time-duration-input">
+                        </div>
+                        <div class="settings-group">
+                            <label for="break-length">Break Duration (min)</label>
+                            <input type="number" id="break-length" value="5" min="1" max="30" class="time-duration-input">
                         </div>
                     </div>
-                    <div class="settings-group">
-                        <label for="session-length">Work Duration (min)</label>
-                        <input type="number" id="session-length" value="25" min="1" max="60" class="time-duration-input">
+
+                    <div class="timer-display-container">
+                        <svg class="progress-ring" width="220" height="220">
+                            <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.05)" stroke-width="8" fill="transparent" r="98" cx="110" cy="110" />
+                            <circle class="progress-ring__circle" stroke="#87c38f" stroke-width="8" fill="transparent" r="98" cx="110" cy="110" />
+                        </svg>
+                        <div class="timer-info">
+                            <span id="timer-state">Focus</span>
+                            <div id="timer-countdown">25:00</div>
+                            <span id="session-counter">Session 1 of 4</span>
+                        </div>
                     </div>
-                    <div class="settings-group">
-                        <label for="break-length">Break Duration (min)</label>
-                        <input type="number" id="break-length" value="5" min="1" max="30" class="time-duration-input">
+
+                    <div class="timer-controls">
+                        <button id="btn-timer-toggle" class="btn btn-primary" onclick="toggleTimer()">
+                            <svg class="btn-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
+                            <span>Start</span>
+                        </button>
+                        <button id="btn-timer-reset" class="btn btn-secondary" onclick="resetTimer()">
+                            <svg class="btn-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                            <span>Reset</span>
+                        </button>
                     </div>
                 </div>
-
-                <div class="timer-display-container">
-                    <svg class="progress-ring" width="220" height="220">
-                        <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.05)" stroke-width="8" fill="transparent" r="98" cx="110" cy="110" />
-                        <circle class="progress-ring__circle" stroke="#87c38f" stroke-width="8" fill="transparent" r="98" cx="110" cy="110" />
-                    </svg>
-                    <div class="timer-info">
-                        <span id="timer-state">Focus</span>
-                        <div id="timer-countdown">25:00</div>
-                        <span id="session-counter">Session 1 of 4</span>
-                    </div>
-                </div>
-
-                <div class="timer-controls">
-                    <button id="btn-timer-toggle" class="btn btn-primary" onclick="toggleTimer()">
-                        <svg class="btn-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
-                        <span>Start</span>
-                    </button>
-                    <button id="btn-timer-reset" class="btn btn-secondary" onclick="resetTimer()">
-                        <svg class="btn-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-                        <span>Reset</span>
-                    </button>
-                </div>
-
             </section>
 
             <!-- Center Panel: The Mascot/Lily Pad -->
@@ -158,67 +187,66 @@
             </section>
 
             <!-- Right Panel: Tasks List -->
-            <section class="panel tasks-panel" id="tasks-section">
-                <div class="panel-header">
+            <section class="panel tasks-panel" id="tasks-section" style="display: flex; flex-direction: column; height: 100%;">
+                <div class="panel-header" style="margin-bottom: 12px;">
                     <h2>📋 Tasks to Hop On</h2>
-                    <span class="task-stats" id="task-stats">0/0 completed</span>
-                </div>
-                
-                <form id="todo-form" onsubmit="handleAddTask(event)">
-                    <div class="task-input-wrapper">
-                        <input type="text" id="task-input" placeholder="Type a task to complete..." autocomplete="off" required>
-                        <button type="submit" class="btn btn-add" id="btn-add-task" aria-label="Add task">
-                            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span class="task-stats" id="task-stats" style="font-size: 0.8rem; color: var(--color-text-dim);">0/0 completed</span>
+                        <button id="btn-open-add-task" class="btn btn-primary btn-sm" onclick="openAddTaskModal()" style="font-size: 0.8rem; padding: 4px 10px; border-radius: 8px;">
+                            <span>Add Task</span>
                         </button>
                     </div>
-                    
-                    <div class="task-details-row">
-                        <div class="task-detail-field">
-                            <label for="task-due-date">📅 Due</label>
-                            <input type="date" id="task-due-date">
-                        </div>
-                        <div class="task-detail-field">
-                            <label for="task-urgency">⚡ Urgency</label>
-                            <select id="task-urgency">
-                                <option value="low">Low</option>
-                                <option value="medium" selected>Medium</option>
-                                <option value="high">High</option>
-                            </select>
-                        </div>
-                        <div class="task-detail-field">
-                            <label for="task-category">🏷️ Category</label>
-                            <div class="category-select-wrapper">
-                                <select id="task-category">
-                                    <!-- Populated dynamically -->
-                                </select>
-                                <button type="button" class="btn-mini-add" onclick="promptAddCategory()" title="Add Custom Category">+</button>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-
-                <!-- Filters & Sorting Bar -->
-                <div class="tasks-filter-sort-bar">
-                    <div class="filter-sort-group">
-                        <select id="filter-category" onchange="filterAndSortTasks()" aria-label="Filter by category">
-                            <option value="all">All Categories</option>
-                            <!-- Populated dynamically -->
-                        </select>
-                    </div>
-                    <div class="filter-sort-group">
-                        <select id="sort-tasks" onchange="filterAndSortTasks()" aria-label="Sort tasks by">
-                            <option value="dueDateAsc">📅 Date (Earliest)</option>
-                            <option value="dueDateDesc">📅 Date (Latest)</option>
-                            <option value="urgencyDesc">⚡ Urgency (High first)</option>
-                            <option value="urgencyAsc">⚡ Urgency (Low first)</option>
-                            <option value="none">Default Sort</option>
-                        </select>
-                    </div>
-                    <button type="button" class="btn btn-secondary btn-sm hidden" id="btn-clear-date-filter" onclick="clearDateFilter()">Clear Date Filter</button>
                 </div>
 
-                <div class="todo-list-container">
-                    <ul id="todo-list" class="todo-list">
+                <!-- Filter and Sort Controls (from frog-study-app) -->
+                <div class="controls-bar" style="margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px;">
+                    <div class="search-box">
+                        <input type="text" id="task-search" placeholder="Search tasks..." autocomplete="off" oninput="filterAndSortTasks()" style="width: 100%; padding: 8px 12px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--panel-border); border-radius: 10px; color: var(--color-cream); font-family: var(--font-body); font-size: 0.85rem;">
+                    </div>
+                    
+                    <div class="filters-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
+                        <div class="control-group" style="display: flex; flex-direction: column; gap: 2px;">
+                            <label for="filter-category" style="font-size: 0.65rem; font-weight: 700; color: var(--color-sage); text-transform: uppercase;">Category</label>
+                            <select id="filter-category" onchange="filterAndSortTasks()" style="padding: 6px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--panel-border); border-radius: 8px; color: var(--color-cream); font-size: 0.8rem; outline: none; cursor: pointer;">
+                                <option value="all">All</option>
+                                <option value="School">School</option>
+                                <option value="Work">Work</option>
+                                <!-- Dynamic options -->
+                            </select>
+                        </div>
+
+                        <div class="control-group" style="display: flex; flex-direction: column; gap: 2px;">
+                            <label for="filter-urgency" style="font-size: 0.65rem; font-weight: 700; color: var(--color-sage); text-transform: uppercase;">Urgency</label>
+                            <select id="filter-urgency" onchange="filterAndSortTasks()" style="padding: 6px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--panel-border); border-radius: 8px; color: var(--color-cream); font-size: 0.8rem; outline: none; cursor: pointer;">
+                                <option value="all">All</option>
+                                <option value="high">🔴 High</option>
+                                <option value="medium">🟡 Medium</option>
+                                <option value="low">🟢 Low</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group" style="display: flex; flex-direction: column; gap: 2px;">
+                            <label for="sort-tasks" style="font-size: 0.65rem; font-weight: 700; color: var(--color-sage); text-transform: uppercase;">Sort By</label>
+                            <select id="sort-tasks" onchange="filterAndSortTasks()" style="padding: 6px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--panel-border); border-radius: 8px; color: var(--color-cream); font-size: 0.8rem; outline: none; cursor: pointer;">
+                                <option value="dueDateAsc">Date (Asc)</option>
+                                <option value="dueDateDesc">Date (Desc)</option>
+                                <option value="urgencyDesc">Urgency (High)</option>
+                                <option value="urgencyAsc">Urgency (Low)</option>
+                                <option value="none">Default</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Filters Indicator -->
+                <div id="active-filters-badges" class="active-filters-badges hidden" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; padding: 6px 10px; background: rgba(255, 255, 255, 0.02); border-radius: 8px; border: 1px dashed rgba(135, 195, 143, 0.2);">
+                    <span class="badge-title" style="font-size: 0.7rem; font-weight: 600; color: var(--color-sage);">Filters:</span>
+                    <div id="badge-container" class="badge-container" style="display: flex; gap: 4px; flex-wrap: wrap;"></div>
+                    <button id="btn-clear-all-filters" class="btn-clear-filters" onclick="clearAllFilters()" style="background: none; border: none; color: var(--urgency-high); font-size: 0.7rem; font-weight: 600; cursor: pointer; margin-left: auto; text-decoration: underline;">Reset</button>
+                </div>
+
+                <div class="todo-list-container" style="flex-grow: 1; overflow-y: auto;">
+                    <ul id="todo-list" class="todo-list" style="list-style: none; display: flex; flex-direction: column; gap: 8px;">
                         <!-- Tasks dynamically populated here -->
                     </ul>
                 </div>
@@ -319,7 +347,15 @@
                 
                 <!-- Quick Add Calendar Item Form inside the modal -->
                 <div class="calendar-quick-add-panel">
-                    <h3>➕ Add Calendar Item</h3>
+                    <!-- Selected Day Events List -->
+                    <div id="calendar-day-events-section" style="margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px;">
+                        <h3 id="calendar-day-events-title" style="font-family: var(--font-heading); font-size: 1.1rem; color: var(--color-mint); margin: 0; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 6px;">📅 Events for selected date</h3>
+                        <div id="calendar-day-events-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; padding-right: 4px;">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <h3 style="margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; font-family: var(--font-heading); font-size: 1.1rem; color: var(--color-mint); margin-bottom: 2px;">➕ Add Calendar Item</h3>
                     <form id="calendar-quick-add-form" onsubmit="handleCalendarAdd(event)">
                         <div class="form-group">
                             <label for="cal-item-title">Title</label>
@@ -339,13 +375,23 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" style="display: flex; flex-direction: column; gap: 4px;">
                             <label for="cal-item-category">Category</label>
-                            <select id="cal-item-category">
+                            <select id="cal-item-category" onchange="handleCalendarCategorySelectChange(this.value)" style="padding: 10px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--panel-border); border-radius: 10px; color: var(--color-cream); font-family: var(--font-body); font-size: 0.9rem; cursor: pointer;">
                                 <!-- Populated dynamically -->
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Add to Calendar</button>
+
+                        <!-- Custom Category Input for Calendar -->
+                        <div id="cal-custom-category-group" class="form-group hidden" style="display: flex; flex-direction: column; gap: 4px; margin-top: 8px;">
+                            <label for="cal-custom-category-name" style="font-size: 0.75rem; font-weight: 600; color: var(--color-sage); text-transform: uppercase;">New Category Name</label>
+                            <div class="custom-category-input-wrapper" style="display: flex; gap: 8px;">
+                                <input type="text" id="cal-custom-category-name" placeholder="E.g., Personal, Chores" autocomplete="off" style="flex-grow: 1; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--panel-border); border-radius: 10px; color: var(--color-cream); font-size: 0.9rem;">
+                                <button type="button" class="btn btn-secondary" onclick="saveCalendarCustomCategory()" style="padding: 10px 16px; border-radius: 10px; font-weight: bold; cursor: pointer;">Add</button>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 18px;">Add to Calendar</button>
                     </form>
                 </div>
             </div>
@@ -354,15 +400,21 @@
 
     <!-- Games Modal Overlay (Drawer) -->
     <div id="games-modal" class="modal-overlay" onclick="if(event.target === this) closeGamesModal()">
-        <div class="modal-content glass-panel calendar-modal-content games-modal-content">
+        <div class="modal-content glass-panel games-modal-content">
             <div class="modal-header">
                 <h2>🎮 Cozy Arcade</h2>
                 <button class="btn-close" onclick="closeGamesModal()">&times;</button>
             </div>
             
-            <div class="modal-body games-modal-body">
+            <div class="modal-body games-modal-body" style="display: flex; flex-direction: column; gap: 16px; flex-grow: 1; overflow-y: auto; align-items: stretch; padding: 10px 0;">
+                <!-- Game Tabs Selector -->
+                <div class="games-tabs-bar" style="display: flex; justify-content: center; gap: 12px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; width: 100%;">
+                    <button class="panel-tab-btn active" id="tab-game-2048" onclick="switchCozyArcadeGame('2048')" style="background: none; border: none; font-family: var(--font-heading); font-size: 1.15rem; font-weight: 600; color: var(--color-cream); cursor: pointer; padding-bottom: 4px; border-bottom: 2px solid var(--color-sage); transition: all 0.2s;">🧩 Froggy 2048</button>
+                    <button class="panel-tab-btn" id="tab-game-study" onclick="switchCozyArcadeGame('study')" style="background: none; border: none; font-family: var(--font-heading); font-size: 1.15rem; font-weight: 600; color: var(--color-text-dim); cursor: pointer; padding-bottom: 4px; border-bottom: 2px solid transparent; transition: all 0.2s;">📇 Study Games</button>
+                </div>
+
                 <!-- 2048 Game Container -->
-                <div class="game-container-2048">
+                <div class="game-container-2048" style="width: 320px; margin: 0 auto;">
                     <div class="game-header-2048">
                         <div class="game-title-2048">Froggy 2048</div>
                         <div class="scores-container-2048">
@@ -418,6 +470,136 @@
                             <button class="btn-key-2048" onclick="move2048('left')">◀</button>
                             <button class="btn-key-2048" onclick="move2048('down')">▼</button>
                             <button class="btn-key-2048" onclick="move2048('right')">▶</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Study Games Inner Content -->
+                <div id="games-inner-content" class="hidden" style="display: flex; flex-direction: column; gap: 16px; width: 100%; padding: 0 16px;">
+                    <!-- Game Menu View -->
+                    <div id="game-menu-view">
+                        <div style="text-align: center; margin-bottom: 16px;">
+                            <p style="color: var(--color-text-dim); font-size: 0.9rem;">Choose a flashcard deck to play games!</p>
+                        </div>
+
+                        <div style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 6px;">
+                            <label for="game-set-select" style="font-weight: 600; color: var(--color-sage); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;">Select Flashcard Deck</label>
+                            <select id="game-set-select" class="btn-secondary" style="width: 100%; padding: 10px; border-radius: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(135,195,143,0.3); color: var(--color-cream); font-family: var(--font-body); font-size: 0.95rem; outline: none; cursor: pointer;">
+                                <!-- Options populated dynamically -->
+                            </select>
+                        </div>
+
+                        <div class="games-grid" style="display: flex; flex-direction: column; gap: 12px;">
+                            <!-- Match Game Option -->
+                            <div class="game-option-card" onclick="startMatchingGame()" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(135, 195, 143, 0.15); border-radius: 14px; padding: 16px; text-align: center; display: flex; align-items: center; gap: 12px; transition: all 0.25s; cursor: pointer;">
+                                <span style="font-size: 2rem;">🍃</span>
+                                <div style="text-align: left; flex-grow: 1;">
+                                    <h3 style="font-family: var(--font-heading); font-size: 1.1rem; color: var(--color-mint); margin-bottom: 2px;">Matching Lilypads</h3>
+                                    <p style="color: var(--color-text-dim); font-size: 0.8rem;">Match terms and definitions fast!</p>
+                                </div>
+                            </div>
+
+                            <!-- Blaster Game Option -->
+                            <div class="game-option-card" onclick="setupBlasterGame()" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(135, 195, 143, 0.15); border-radius: 14px; padding: 16px; text-align: center; display: flex; align-items: center; gap: 12px; transition: all 0.25s; cursor: pointer;">
+                                <span style="font-size: 2rem;">💧</span>
+                                <div style="text-align: left; flex-grow: 1;">
+                                    <h3 style="font-family: var(--font-heading); font-size: 1.1rem; color: var(--color-mint); margin-bottom: 2px;">Pond Blaster</h3>
+                                    <p style="color: var(--color-text-dim); font-size: 0.8rem;">Blast floating answers with water!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Match Game Play View -->
+                    <div id="game-matching-view" class="hidden" style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px; margin-bottom: 8px;">
+                            <button class="btn btn-secondary btn-sm" onclick="exitGame()">⬅️ Menu</button>
+                            <div style="display: flex; gap: 12px; font-weight: 600; font-size: 0.95rem; color: var(--color-mint);">
+                                <span id="match-timer">⏱️ 0.0s</span>
+                                <span id="match-high-score">🏆 Best: --</span>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="restartMatchingGame()">🔄 Reset</button>
+                        </div>
+                        
+                        <div id="matching-grid-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; min-height: 250px;">
+                            <!-- Shuffled cards -->
+                        </div>
+                    </div>
+
+                    <!-- Blaster Game Setup View -->
+                    <div id="game-blaster-setup-view" class="hidden" style="text-align: center; display: flex; flex-direction: column; gap: 16px; margin: 10px 0;">
+                        <h3 style="font-family: var(--font-heading); font-size: 1.2rem; color: var(--color-mint);">💧 Pond Blaster</h3>
+                        
+                        <div class="panel" style="background: rgba(0,0,0,0.2); min-height: auto; padding: 12px; gap: 8px; text-align: left; border-radius: 12px;">
+                            <div style="font-weight: 600; font-size: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px; margin-bottom: 6px; color: var(--color-sage);">QUESTION MODE</div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem;">
+                                    <input type="radio" name="blaster-prompt-mode" value="def-to-concept" checked style="width: 14px; height: 14px; accent-color: var(--color-sage);">
+                                    <span>Prompt: <b>Definition</b> ➔ Blast: <b>Concept</b></span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem;">
+                                    <input type="radio" name="blaster-prompt-mode" value="concept-to-def" style="width: 14px; height: 14px; accent-color: var(--color-sage);">
+                                    <span>Prompt: <b>Concept</b> ➔ Blast: <b>Definition</b></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 8px; justify-content: center;">
+                            <button class="btn btn-secondary btn-sm" onclick="exitGame()">Cancel</button>
+                            <button class="btn btn-primary btn-sm" onclick="startBlasterGame()">Start Blasting! 🚀</button>
+                        </div>
+                    </div>
+
+                    <!-- Blaster Game Play View -->
+                    <div id="game-blaster-play-view" class="hidden" style="width: 100%; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 6px; margin-bottom: 6px;">
+                            <button class="btn btn-secondary btn-sm" onclick="exitGame()">⬅️ Menu</button>
+                            <div style="display: flex; gap: 10px; font-weight: 600; font-size: 0.85rem; color: var(--color-mint);">
+                                <span id="blaster-score">Score: 0</span>
+                                <span id="blaster-lives">🌸🌸🌸</span>
+                                <span id="blaster-progress">1/5</span>
+                            </div>
+                        </div>
+
+                        <!-- Blaster Arena -->
+                        <div id="blaster-arena" style="position: relative; width: 100%; height: 380px; background: radial-gradient(circle at 50% 100%, #153228 0%, #0d1e1a 100%); border: 2px solid var(--panel-border); border-radius: 16px; overflow: hidden; cursor: crosshair;">
+                            
+                            <!-- Question Prompt -->
+                            <div id="blaster-question-box" style="position: absolute; top: 10px; left: 4%; right: 4%; background: rgba(244, 235, 217, 0.95); color: #1a322b; padding: 8px 12px; border-radius: 8px; text-align: center; font-weight: 600; font-size: 0.85rem; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 10; border-left: 4px solid var(--color-sage);">
+                                Question...
+                            </div>
+
+                            <!-- Interactive Layer -->
+                            <div id="blaster-objects-layer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></div>
+
+                            <!-- Frog Blaster -->
+                            <div id="blaster-frog" style="position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 2.2rem; user-select: none; pointer-events: none; line-height: 1; z-index: 5;">
+                                🐸
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Game Victory / Over Screen -->
+                    <div id="game-results-view" class="hidden" style="text-align: center; display: flex; flex-direction: column; gap: 12px; margin: 20px 0;">
+                        <span id="results-emoji" style="font-size: 3rem;">🏆</span>
+                        <h3 id="results-title" style="font-family: var(--font-heading); font-size: 1.3rem; color: var(--color-mint);">Victory!</h3>
+                        <p id="results-message" style="color: var(--color-text-dim); font-size: 0.85rem; line-height: 1.4;">Matched all cards!</p>
+                        
+                        <div class="panel" style="background: rgba(0,0,0,0.2); min-height: auto; padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border-radius: 12px;">
+                            <div>
+                                <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--color-sage);">Your Result</div>
+                                <div id="results-val-current" style="font-size: 1.3rem; font-weight: 700; color: var(--color-cream); margin-top: 2px;">--</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--color-sage);">Best Result</div>
+                                <div id="results-val-best" style="font-size: 1.3rem; font-weight: 700; color: var(--color-cream); margin-top: 2px;">--</div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 8px; justify-content: center;">
+                            <button class="btn btn-secondary btn-sm" onclick="exitGame()">Menu</button>
+                            <button class="btn btn-primary btn-sm" id="btn-replay">Replay 🔄</button>
                         </div>
                     </div>
                 </div>
@@ -562,6 +744,110 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Task Modal -->
+    <div id="add-task-modal" class="modal-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(18, 34, 30, 0.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 1800; display: flex; justify-content: center; align-items: center;">
+        <div class="modal-card" style="background: #152c24; border: 1px solid var(--panel-border); width: 90%; max-width: 480px; border-radius: 24px; padding: 24px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; gap: 16px;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 12px;">
+                <h2 id="modal-title" style="font-family: var(--font-heading); font-size: 1.3rem; color: var(--color-mint); margin: 0;">New Task Details</h2>
+                <button class="btn-close-modal" onclick="closeAddTaskModal()" style="background: none; border: none; font-size: 1.8rem; color: var(--color-text-dim); cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+            
+            <form id="task-form" onsubmit="handleFormSubmit(event)" style="display: flex; flex-direction: column; gap: 12px;">
+                <input type="hidden" id="edit-task-id" value="">
+                
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 4px;">
+                    <label for="task-title" style="font-size: 0.75rem; font-weight: 600; color: var(--color-sage); text-transform: uppercase;">Task Name</label>
+                    <input type="text" id="task-title" placeholder="What needs to be done?" required autocomplete="off" style="padding: 10px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--panel-border); border-radius: 10px; color: var(--color-cream); font-family: var(--font-body); font-size: 0.9rem;">
+                </div>
+
+                <div class="form-row-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group" style="display: flex; flex-direction: column; gap: 4px;">
+                        <label for="task-due-date-modal" style="font-size: 0.75rem; font-weight: 600; color: var(--color-sage); text-transform: uppercase;">Due Date</label>
+                        <input type="date" id="task-due-date-modal" required style="padding: 10px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--panel-border); border-radius: 10px; color: var(--color-cream); font-family: var(--font-body); font-size: 0.9rem;">
+                    </div>
+                    
+                    <div class="form-group" style="display: flex; flex-direction: column; gap: 4px;">
+                        <label for="task-urgency-modal" style="font-size: 0.75rem; font-weight: 600; color: var(--color-sage); text-transform: uppercase;">Urgency</label>
+                        <select id="task-urgency-modal" style="padding: 10px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--panel-border); border-radius: 10px; color: var(--color-cream); font-family: var(--font-body); font-size: 0.9rem; cursor: pointer;">
+                            <option value="low">🟢 Low Urgency</option>
+                            <option value="medium" selected>🟡 Medium Urgency</option>
+                            <option value="high">🔴 High Urgency</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 4px;">
+                    <label for="task-category-modal" style="font-size: 0.75rem; font-weight: 600; color: var(--color-sage); text-transform: uppercase;">Category</label>
+                    <select id="task-category-modal" onchange="handleCategorySelectChange(this.value)" style="padding: 10px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--panel-border); border-radius: 10px; color: var(--color-cream); font-family: var(--font-body); font-size: 0.9rem; cursor: pointer;">
+                        <option value="School">School</option>
+                        <option value="Work">Work</option>
+                        <option value="__add_new__" class="option-add-new" style="color: var(--urgency-medium); font-weight: bold;">+ Add Custom Category...</option>
+                    </select>
+                </div>
+
+                <!-- Custom Category Inputs -->
+                <div id="custom-category-group" class="form-group hidden" style="display: flex; flex-direction: column; gap: 4px;">
+                    <label for="custom-category-name" style="font-size: 0.75rem; font-weight: 600; color: var(--color-sage); text-transform: uppercase;">New Category Name</label>
+                    <div class="custom-category-input-wrapper" style="display: flex; gap: 8px;">
+                        <input type="text" id="custom-category-name" placeholder="E.g., Personal, Chores" autocomplete="off" style="flex-grow: 1; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--panel-border); border-radius: 10px; color: var(--color-cream); font-size: 0.9rem;">
+                        <button type="button" class="btn btn-secondary" onclick="saveCustomCategory()" style="padding: 10px 16px; border-radius: 10px; font-weight: bold; cursor: pointer;">Add</button>
+                    </div>
+                </div>
+
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 4px;">
+                    <label for="task-notes" style="font-size: 0.75rem; font-weight: 600; color: var(--color-sage); text-transform: uppercase;">Notes / Details (Optional)</label>
+                    <textarea id="task-notes" rows="3" placeholder="Add descriptions, sub-steps, or links..." style="padding: 10px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--panel-border); border-radius: 10px; color: var(--color-cream); font-family: var(--font-body); font-size: 0.9rem; resize: vertical;"></textarea>
+                </div>
+
+                <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddTaskModal()" style="padding: 10px 16px; border-radius: 10px; font-weight: bold; cursor: pointer;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-task" style="padding: 10px 16px; border-radius: 10px; font-weight: bold; cursor: pointer;">Save Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Flashcard Set Modal -->
+    <div id="add-set-modal" class="modal-overlay">
+        <div class="modal-content glass-panel" style="max-width: 1100px; width: 92%; max-height: 90vh; display: flex; flex-direction: column; padding: 24px; border-radius: 24px;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; margin-bottom: 16px;">
+                <h2 id="set-modal-title" style="font-family: var(--font-heading); color: var(--color-cream); font-size: 1.4rem;">Create Flashcard Set</h2>
+                <button class="btn-close" onclick="closeAddSetModal()" style="background: none; border: none; color: var(--color-text-dim); font-size: 1.5rem; cursor: pointer;">&times;</button>
+            </div>
+            
+            <form id="set-form" onsubmit="handleSetFormSubmit(event)" style="display: flex; flex-direction: column; gap: 16px; flex-grow: 1; overflow-y: auto; padding-right: 4px;">
+                <input type="hidden" id="edit-set-id" value="">
+                
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 4px;">
+                    <label for="set-title" style="font-size: 0.75rem; font-weight: 600; color: var(--color-sage); text-transform: uppercase;">Set Title</label>
+                    <input type="text" id="set-title" placeholder="E.g., Biology Final Exam" required autocomplete="off" style="padding: 10px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--panel-border); border-radius: 10px; color: var(--color-cream); font-family: var(--font-body); font-size: 0.9rem;">
+                </div>
+
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 4px;">
+                    <label for="set-description" style="font-size: 0.75rem; font-weight: 600; color: var(--color-sage); text-transform: uppercase;">Description (Optional)</label>
+                    <textarea id="set-description" rows="2" placeholder="Describe the topics covered in this set..." style="padding: 10px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--panel-border); border-radius: 10px; color: var(--color-cream); font-family: var(--font-body); font-size: 0.9rem; resize: vertical;"></textarea>
+                </div>
+
+                <!-- Terms and Definitions list -->
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: var(--color-sage); text-transform: uppercase;">Terms & Definitions</label>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="addNewCardRow()" style="padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;">➕ Add Card</button>
+                    </div>
+                    
+                    <div id="set-cards-list-container" style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 4px;">
+                        <!-- Dynamically generated rows of Term & Definition inputs -->
+                    </div>
+                </div>
+
+                <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddSetModal()" style="padding: 10px 16px; border-radius: 10px; font-weight: bold; cursor: pointer;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-set" style="padding: 10px 16px; border-radius: 10px; font-weight: bold; cursor: pointer;">Save Set</button>
+                </div>
+            </form>
         </div>
     </div>
 

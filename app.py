@@ -110,6 +110,8 @@ def init_db():
         db.execute("ALTER TABLE tasks ADD COLUMN category TEXT")
     if 'urgency' not in columns:
         db.execute("ALTER TABLE tasks ADD COLUMN urgency TEXT")
+    if 'notes' not in columns:
+        db.execute("ALTER TABLE tasks ADD COLUMN notes TEXT")
     db.commit()
 
 with app.app_context():
@@ -196,7 +198,8 @@ def get_tasks():
             'created_at': task['created_at'],
             'due_date': task['due_date'],
             'category': task['category'] or 'School',
-            'urgency': task['urgency'] or 'medium'
+            'urgency': task['urgency'] or 'medium',
+            'notes': task['notes'] or ''
         } for task in tasks
     ])
 
@@ -206,10 +209,11 @@ def add_task():
         return jsonify({'error': 'Unauthorized'}), 401
 
     data = request.get_json() or {}
-    title = data.get('title', '').strip()
-    due_date = data.get('due_date', '').strip() or None
-    category = data.get('category', 'School').strip() or 'School'
-    urgency = data.get('urgency', 'medium').strip() or 'medium'
+    title = (data.get('title') or '').strip()
+    due_date = (data.get('due_date') or '').strip() or None
+    category = (data.get('category') or '').strip() or 'School'
+    urgency = (data.get('urgency') or '').strip() or 'medium'
+    notes = (data.get('notes') or '').strip() or None
 
     if not title:
         return jsonify({'error': 'Task title is required'}), 400
@@ -217,8 +221,8 @@ def add_task():
     db = get_db()
     try:
         cursor = db.execute(
-            'INSERT INTO tasks (user_id, title, completed, due_date, category, urgency) VALUES (?, ?, 0, ?, ?, ?)',
-            (session['user_id'], title, due_date, category, urgency)
+            'INSERT INTO tasks (user_id, title, completed, due_date, category, urgency, notes) VALUES (?, ?, 0, ?, ?, ?, ?)',
+            (session['user_id'], title, due_date, category, urgency, notes)
         )
         db.commit()
         task_id = cursor.lastrowid
@@ -231,7 +235,8 @@ def add_task():
             'created_at': task['created_at'],
             'due_date': task['due_date'],
             'category': task['category'] or 'School',
-            'urgency': task['urgency'] or 'medium'
+            'urgency': task['urgency'] or 'medium',
+            'notes': task['notes'] or ''
         }), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -247,6 +252,7 @@ def update_task(task_id):
     due_date = data.get('due_date')
     category = data.get('category')
     urgency = data.get('urgency')
+    notes = data.get('notes')
 
     db = get_db()
     task = db.execute('SELECT * FROM tasks WHERE id = ? AND user_id = ?', (task_id, session['user_id'])).fetchone()
@@ -261,16 +267,19 @@ def update_task(task_id):
             params.append(1 if completed else 0)
         if title is not None:
             update_fields.append("title = ?")
-            params.append(title.strip())
+            params.append((title or '').strip())
         if due_date is not None:
             update_fields.append("due_date = ?")
-            params.append(due_date.strip() or None)
+            params.append((due_date or '').strip() or None)
         if category is not None:
             update_fields.append("category = ?")
-            params.append(category.strip() or 'School')
+            params.append((category or '').strip() or 'School')
         if urgency is not None:
             update_fields.append("urgency = ?")
-            params.append(urgency.strip() or 'medium')
+            params.append((urgency or '').strip() or 'medium')
+        if notes is not None:
+            update_fields.append("notes = ?")
+            params.append((notes or '').strip() or None)
 
         if not update_fields:
             return jsonify({'error': 'No fields to update'}), 400

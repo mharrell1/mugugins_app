@@ -449,10 +449,12 @@ async function fetchTasks() {
     }
 }
 
-// Filter and Sort Pipeline
+// Filter and Sort Pipeline (Rich filter version from study pond)
 function filterAndSortTasks() {
     const categoryFilter = document.getElementById('filter-category').value;
     const sortVal = document.getElementById('sort-tasks').value;
+    const searchVal = (document.getElementById('task-search')?.value || '').trim().toLowerCase();
+    const urgencyFilter = document.getElementById('filter-urgency')?.value || 'all';
     
     let filtered = [...allTasks];
     
@@ -465,8 +467,21 @@ function filterAndSortTasks() {
     if (selectedDateFilter) {
         filtered = filtered.filter(t => t.due_date === selectedDateFilter);
     }
+
+    // 3. Filter by search
+    if (searchVal) {
+        filtered = filtered.filter(t => 
+            t.title.toLowerCase().includes(searchVal) || 
+            (t.notes && t.notes.toLowerCase().includes(searchVal))
+        );
+    }
+
+    // 4. Filter by urgency
+    if (urgencyFilter !== 'all') {
+        filtered = filtered.filter(t => (t.urgency || 'medium') === urgencyFilter);
+    }
     
-    // 3. Sort tasks
+    // 5. Sort tasks
     const urgencyWeight = { 'high': 3, 'medium': 2, 'low': 1 };
     filtered.sort((a, b) => {
         // Completed tasks are pushed to the bottom
@@ -498,6 +513,7 @@ function filterAndSortTasks() {
     
     renderTasks(filtered);
     renderCalendar();
+    updateActiveFiltersIndicator();
 }
 
 function renderTasks(tasks) {
@@ -510,31 +526,185 @@ function renderTasks(tasks) {
 
         const li = document.createElement('li');
         li.className = `todo-item ${task.completed ? 'completed' : ''}`;
+        li.style.display = 'flex';
+        li.style.alignItems = 'flex-start';
+        li.style.gap = '12px';
+        li.style.padding = '12px';
+        li.style.background = 'rgba(255,255,255,0.02)';
+        li.style.border = '1px solid rgba(255,255,255,0.05)';
+        li.style.borderRadius = '14px';
+        li.style.transition = 'all 0.2s';
         
         const catColor = getCategoryColor(task.category || 'School');
         const formattedDate = task.due_date ? formatReadableDate(task.due_date) : 'No due date';
+        const todayStr = '2026-06-22';
+        const isOverdue = !task.completed && task.due_date && task.due_date < todayStr;
         
         li.innerHTML = `
-            <div class="todo-item-left">
-                <input type="checkbox" class="lily-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${task.id}', this.checked)">
-                <div class="todo-item-content">
-                    <span class="todo-text">${escapeHTML(task.title)}</span>
-                    <div class="todo-meta-row">
-                        ${task.due_date ? `<span class="todo-meta-badge due-badge">📅 ${formattedDate}</span>` : ''}
-                        <span class="todo-meta-badge urgency-badge urgency-${task.urgency || 'medium'}">⚡ ${capitalize(task.urgency || 'medium')}</span>
-                        <span class="todo-meta-badge category-badge" style="background: ${catColor}22; color: ${catColor}; border: 1px solid ${catColor}44;">🏷️ ${escapeHTML(task.category || 'School')}</span>
-                    </div>
+            <label class="checkbox-container">
+                <input type="checkbox" id="check-${task.id}" ${task.completed ? 'checked' : ''} onchange="toggleTask('${task.id}', this.checked)">
+                <span class="checkmark"></span>
+            </label>
+            
+            <div class="task-content">
+                <div class="task-title-row">
+                    <span class="task-title">${escapeHTML(task.title)}</span>
                 </div>
+                
+                <div class="badges-row">
+                    <span class="badge badge-urgency ${task.urgency || 'medium'}">
+                        ${task.urgency === 'high' ? '🔴' : task.urgency === 'low' ? '🟢' : '🟡'} ${capitalize(task.urgency || 'medium')}
+                    </span>
+                    <span class="badge badge-category" style="background: ${catColor}20; color: ${catColor}; border: 1px solid ${catColor}40">
+                        🏷️ ${escapeHTML(task.category || 'School')}
+                    </span>
+                    <span class="task-due ${isOverdue ? 'overdue' : ''}" style="font-size: 0.75rem; color: var(--color-text-dim);">
+                        📅 Due: ${formattedDate} ${isOverdue ? '(Overdue!)' : ''}
+                    </span>
+                </div>
+                
+                ${task.notes ? `<p class="task-notes" style="font-size: 0.8rem; color: var(--color-text-dim); margin-top: 4px; padding-left: 4px; border-left: 2px solid rgba(255,255,255,0.05);">${escapeHTML(task.notes)}</p>` : ''}
             </div>
-            <button class="btn-delete-task" onclick="deleteTask('${task.id}')" aria-label="Delete task">
-                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M19 4h-3.5l-1-1h-5l-1 1H5v2h14M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12z"/></svg>
-            </button>
+            
+            <div class="task-actions" style="display: flex; gap: 4px; align-self: flex-start; margin-left: auto;">
+                <button class="btn btn-secondary btn-sm" onclick="editTask('${task.id}')" title="Edit Task" style="padding: 4px 6px; border-radius: 6px; background: none; border: none; color: var(--color-text-dim); cursor: pointer;">
+                    <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="deleteTask('${task.id}')" title="Delete Task" style="padding: 4px 6px; border-radius: 6px; background: none; border: none; color: var(--color-text-dim); cursor: pointer;">
+                    <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                </button>
+            </div>
         `;
         list.appendChild(li);
     });
 
     document.getElementById('task-stats').textContent = `${completedCount}/${tasks.length} completed`;
+    
+    // Update dashboard statistics at the top of the grid!
+    updateTopDashboardStats(tasks, completedCount);
 }
+
+function updateTopDashboardStats(tasks, completedCount) {
+    const activeCount = tasks.filter(t => !t.completed).length;
+    const urgentCount = tasks.filter(t => !t.completed && t.urgency === 'high').length;
+    const percent = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
+    
+    const activeEl = document.getElementById('stats-active');
+    const urgentEl = document.getElementById('stats-urgent');
+    const completedEl = document.getElementById('stats-completed');
+    const mascotMsgEl = document.getElementById('mascot-message');
+    
+    if (activeEl) activeEl.textContent = activeCount;
+    if (urgentEl) urgentEl.textContent = urgentCount;
+    if (completedEl) completedEl.textContent = `${percent}%`;
+    
+    if (mascotMsgEl) {
+        const todayStr = '2026-06-22';
+        const overdueCount = tasks.filter(t => !t.completed && t.due_date && t.due_date < todayStr).length;
+        
+        if (overdueCount > 0) {
+            mascotMsgEl.textContent = `Ribbit! Watch out, you have ${overdueCount} overdue task${overdueCount > 1 ? 's' : ''} in the pond! Let's clear them up! 🌿`;
+        } else if (urgentCount > 0) {
+            mascotMsgEl.textContent = `Warning! You have ${urgentCount} high-urgency task${urgentCount > 1 ? 's' : ''} active! Hop to it, you can do it! 🔴`;
+        } else if (tasks.length > 0 && activeCount === 0) {
+            mascotMsgEl.textContent = "Hooray! Ribbit! All tasks completed! You've cleaned the pond! Lily is so proud of you! 🌟🍃";
+        } else {
+            const wisdomList = [
+                "One hop at a time! Break down big tasks into little ribbits. 🐸",
+                "Don't forget to take a deep breath. You're doing great! 🌿",
+                "Stay hydrated! Have a sip of water, study partner! 💧",
+                "A clean lily pad makes for a clear mind. Ribbit! 🍃",
+                "Every hop counts, no matter how small. Keep going! ✨",
+                "Is it time for a short break? Lily recommends stretching your legs! 🤸‍♂️",
+                "Cozy vibes only. Let's study peacefully today! 🕯️"
+            ];
+            const randIndex = Math.floor(Math.random() * wisdomList.length);
+            mascotMsgEl.textContent = wisdomList[randIndex];
+        }
+    }
+}
+
+function updateActiveFiltersIndicator() {
+    const badgesContainer = document.getElementById('badge-container');
+    const panelIndicator = document.getElementById('active-filters-badges');
+    if (!badgesContainer || !panelIndicator) return;
+    
+    badgesContainer.innerHTML = '';
+    let filterCount = 0;
+    
+    const searchVal = (document.getElementById('task-search')?.value || '').trim();
+    if (searchVal) {
+        createFilterBadge(badgesContainer, `Search: "${searchVal}"`, () => {
+            document.getElementById('task-search').value = '';
+            filterAndSortTasks();
+        });
+        filterCount++;
+    }
+    
+    const categoryFilter = document.getElementById('filter-category').value;
+    if (categoryFilter !== 'all') {
+        createFilterBadge(badgesContainer, `Cat: ${categoryFilter}`, () => {
+            document.getElementById('filter-category').value = 'all';
+            filterAndSortTasks();
+        });
+        filterCount++;
+    }
+    
+    const urgencyFilter = document.getElementById('filter-urgency')?.value || 'all';
+    if (urgencyFilter !== 'all') {
+        createFilterBadge(badgesContainer, `Urgency: ${capitalize(urgencyFilter)}`, () => {
+            document.getElementById('filter-urgency').value = 'all';
+            filterAndSortTasks();
+        });
+        filterCount++;
+    }
+    
+    if (selectedDateFilter) {
+        createFilterBadge(badgesContainer, `Date: ${formatReadableDate(selectedDateFilter)}`, () => {
+            clearDateFilter();
+        });
+        filterCount++;
+    }
+    
+    if (filterCount > 0) {
+        panelIndicator.classList.remove('hidden');
+    } else {
+        panelIndicator.classList.add('hidden');
+    }
+}
+
+function createFilterBadge(parent, text, onRemove) {
+    const badge = document.createElement('div');
+    badge.className = 'filter-badge';
+    badge.style.display = 'flex';
+    badge.style.alignItems = 'center';
+    badge.style.gap = '4px';
+    badge.style.padding = '2px 6px';
+    badge.style.background = 'rgba(135, 195, 143, 0.15)';
+    badge.style.border = '1px solid rgba(135, 195, 143, 0.3)';
+    badge.style.borderRadius = '6px';
+    badge.style.fontSize = '0.7rem';
+    badge.style.color = 'var(--color-mint)';
+    badge.textContent = text;
+    
+    const removeBtn = document.createElement('span');
+    removeBtn.className = 'btn-remove-badge';
+    removeBtn.innerHTML = '&times;';
+    removeBtn.style.cursor = 'pointer';
+    removeBtn.style.fontWeight = 'bold';
+    removeBtn.addEventListener('click', onRemove);
+    
+    badge.appendChild(removeBtn);
+    parent.appendChild(badge);
+}
+
+window.clearAllFilters = function() {
+    if (document.getElementById('task-search')) document.getElementById('task-search').value = '';
+    if (document.getElementById('filter-category')) document.getElementById('filter-category').value = 'all';
+    if (document.getElementById('filter-urgency')) document.getElementById('filter-urgency').value = 'all';
+    selectedDateFilter = null;
+    filterAndSortTasks();
+};
 
 async function handleAddTask(event) {
     event.preventDefault();
@@ -613,7 +783,7 @@ async function toggleTask(id, completed) {
         }
     } else {
         const tasks = getLocalTasks();
-        const task = tasks.find(t => t.id === id);
+        const task = tasks.find(t => (t.id + '') === (id + ''));
         if (task) {
             task.completed = completed;
             saveLocalTasks(tasks);
@@ -641,12 +811,15 @@ async function deleteTask(id) {
             }
         } else {
             let tasks = getLocalTasks();
-            tasks = tasks.filter(t => t.id !== id);
+            tasks = tasks.filter(t => (t.id + '') !== (id + ''));
             saveLocalTasks(tasks);
             fetchTasks();
         }
     }
 }
+
+window.toggleTask = toggleTask;
+window.deleteTask = deleteTask;
 
 
 /* --- Spotify Integration Player --- */
@@ -760,28 +933,58 @@ function populateCategoryDropdowns() {
     const taskCatSelect = document.getElementById('task-category');
     const filterCatSelect = document.getElementById('filter-category');
     const calCatSelect = document.getElementById('cal-item-category');
+    const modalCatSelect = document.getElementById('task-category-modal');
     
-    const taskSelected = taskCatSelect.value;
-    const filterSelected = filterCatSelect.value;
+    const taskSelected = taskCatSelect ? taskCatSelect.value : '';
+    const filterSelected = filterCatSelect ? filterCatSelect.value : '';
     const calSelected = calCatSelect ? calCatSelect.value : '';
+    const modalSelected = modalCatSelect ? modalCatSelect.value : '';
     
     const categories = ['School', 'Work', ...customCategories];
     
-    taskCatSelect.innerHTML = '';
-    categories.forEach(cat => {
-        const opt = document.createElement('option');
-        opt.value = cat;
-        opt.textContent = cat;
-        taskCatSelect.appendChild(opt);
-    });
+    if (taskCatSelect) {
+        taskCatSelect.innerHTML = '';
+        categories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat;
+            opt.textContent = cat;
+            taskCatSelect.appendChild(opt);
+        });
+        if (categories.includes(taskSelected)) {
+            taskCatSelect.value = taskSelected;
+        }
+    }
     
-    filterCatSelect.innerHTML = '<option value="all">All Categories</option>';
-    categories.forEach(cat => {
-        const opt = document.createElement('option');
-        opt.value = cat;
-        opt.textContent = cat;
-        filterCatSelect.appendChild(opt);
-    });
+    if (modalCatSelect) {
+        modalCatSelect.innerHTML = '';
+        categories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat;
+            opt.textContent = cat;
+            modalCatSelect.appendChild(opt);
+        });
+        const addNewOpt = document.createElement('option');
+        addNewOpt.value = '__add_new__';
+        addNewOpt.textContent = '+ Add Custom Category...';
+        addNewOpt.className = 'option-add-new';
+        modalCatSelect.appendChild(addNewOpt);
+        if (categories.includes(modalSelected)) {
+            modalCatSelect.value = modalSelected;
+        }
+    }
+    
+    if (filterCatSelect) {
+        filterCatSelect.innerHTML = '<option value="all">All Categories</option>';
+        categories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat;
+            opt.textContent = cat;
+            filterCatSelect.appendChild(opt);
+        });
+        if (categories.includes(filterSelected) || filterSelected === 'all') {
+            filterCatSelect.value = filterSelected;
+        }
+    }
     
     if (calCatSelect) {
         calCatSelect.innerHTML = '';
@@ -791,16 +994,14 @@ function populateCategoryDropdowns() {
             opt.textContent = cat;
             calCatSelect.appendChild(opt);
         });
+        const addNewOpt = document.createElement('option');
+        addNewOpt.value = '__add_new__';
+        addNewOpt.textContent = '+ Add Custom Category...';
+        addNewOpt.className = 'option-add-new';
+        calCatSelect.appendChild(addNewOpt);
         if (categories.includes(calSelected)) {
             calCatSelect.value = calSelected;
         }
-    }
-    
-    if (categories.includes(taskSelected)) {
-        taskCatSelect.value = taskSelected;
-    }
-    if (categories.includes(filterSelected) || filterSelected === 'all') {
-        filterCatSelect.value = filterSelected;
     }
 }
 
@@ -972,7 +1173,75 @@ function renderCalendar() {
             calDateInput.value = `${year}-${String(month + 1).padStart(2, '0')}-01`;
         }
     }
+    
+    // Update the selected day events list in the calendar modal sidebar
+    renderCalendarDayEvents(selectedDateFilter || '2026-06-22');
 }
+
+function renderCalendarDayEvents(dateStr) {
+    const listContainer = document.getElementById('calendar-day-events-list');
+    const headerTitle = document.getElementById('calendar-day-events-title');
+    if (!listContainer) return;
+    
+    if (!dateStr) {
+        if (headerTitle) headerTitle.textContent = '📅 Events (No Date Selected)';
+        listContainer.innerHTML = '<div style="text-align: center; color: var(--color-text-dim); font-size: 0.85rem; padding: 12px 0;">Select a date to view events, ribbit!</div>';
+        return;
+    }
+    
+    if (headerTitle) {
+        headerTitle.textContent = `📅 Events for ${formatReadableDate(dateStr)}`;
+    }
+    
+    const dayTasks = allTasks.filter(t => t.due_date === dateStr);
+    
+    if (dayTasks.length === 0) {
+        listContainer.innerHTML = '<div style="text-align: center; color: var(--color-text-dim); font-size: 0.85rem; padding: 12px 0;">No events scheduled for this day, ribbit!</div>';
+        return;
+    }
+    
+    listContainer.innerHTML = '';
+    dayTasks.forEach(task => {
+        const taskEl = document.createElement('div');
+        taskEl.style.display = 'flex';
+        taskEl.style.alignItems = 'center';
+        taskEl.style.justifyContent = 'space-between';
+        taskEl.style.padding = '8px 12px';
+        taskEl.style.background = 'rgba(255, 255, 255, 0.04)';
+        taskEl.style.borderRadius = '10px';
+        taskEl.style.border = '1px solid rgba(255, 255, 255, 0.02)';
+        taskEl.style.gap = '8px';
+        
+        taskEl.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
+                <span style="font-size: 1.1rem; cursor: pointer; user-select: none;" onclick="toggleCalendarTaskComplete('${task.id}', ${!task.completed})">
+                    ${task.completed ? '🌸' : '⚪'}
+                </span>
+                <span style="color: ${task.completed ? 'var(--color-text-dim)' : 'var(--color-cream)'}; text-decoration: ${task.completed ? 'line-through' : 'none'}; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
+                    ${escapeHTML(task.title)}
+                </span>
+            </div>
+            <span class="badge" style="font-size: 0.65rem; padding: 2px 6px; background: ${getCategoryColor(task.category || 'School')}33; color: ${getCategoryColor(task.category || 'School')}; border: 1px solid ${getCategoryColor(task.category || 'School')}66;">
+                ${escapeHTML(task.category || 'School')}
+            </span>
+        `;
+        listContainer.appendChild(taskEl);
+    });
+}
+
+window.toggleCalendarTaskComplete = async function(id, completed) {
+    // Optimistic local update for zero latency
+    const task = allTasks.find(t => (t.id + '') === (id + ''));
+    if (task) {
+        task.completed = completed;
+    }
+    await toggleTask(id, completed);
+    if (selectedDateFilter) {
+        renderCalendarDayEvents(selectedDateFilter);
+    } else {
+        renderCalendarDayEvents('2026-06-22');
+    }
+};
 
 function selectCalendarDate(dateStr) {
     const clearBtn = document.getElementById('btn-clear-date-filter');
@@ -1036,10 +1305,31 @@ async function handleCalendarAdd(event) {
     const urgencyInput = document.getElementById('cal-item-urgency');
     const categoryInput = document.getElementById('cal-item-category');
     
+    let category = categoryInput.value;
     const title = titleInput.value.trim();
     const dueDate = dateInput.value;
     const urgency = urgencyInput.value;
-    const category = categoryInput.value;
+    
+    // Auto-save inline category in calendar form
+    if (category === '__add_new__') {
+        const customInput = document.getElementById('cal-custom-category-name');
+        const customVal = customInput ? customInput.value.trim() : '';
+        if (customVal) {
+            const exists = ['school', 'work', ...customCategories.map(c => c.toLowerCase())].includes(customVal.toLowerCase());
+            if (!exists) {
+                customCategories.push(customVal);
+                localStorage.setItem('froggy_custom_categories', JSON.stringify(customCategories));
+                populateCategoryDropdowns();
+            }
+            category = customVal;
+            if (customInput) customInput.value = '';
+            const customGroup = document.getElementById('cal-custom-category-group');
+            if (customGroup) customGroup.classList.add('hidden');
+        } else {
+            alert('Please specify a category name, or choose School or Work!');
+            return;
+        }
+    }
     
     if (!title || !dueDate) return;
     
@@ -1278,6 +1568,10 @@ function closeGamesModal() {
     isGamesModalOpen = false;
     const sidebarGamesBtn = document.getElementById('btn-sidebar-games');
     if (sidebarGamesBtn) sidebarGamesBtn.classList.remove('active');
+    
+    if (typeof exitGame === 'function') {
+        exitGame();
+    }
 }
 
 function init2048() {
@@ -2363,52 +2657,124 @@ function loadWidgetFromWindow(key, type) {
     }
 }
 
-function showLibraryInPanel() {
+let activeLibraryDeckId = null;
+
+function showLibraryInPanel(searchQuery = '') {
     const container = document.getElementById('froggpt-study-content');
     if (!container) return;
 
-    let savedDecks = [];
-    try {
-        savedDecks = JSON.parse(localStorage.getItem('saved_flashcard_decks')) || [];
-    } catch (e) {
-        savedDecks = [];
+    let savedDecks = loadFlashcardSets();
+
+    const filteredDecks = savedDecks.filter(deck => 
+        deck.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        (deck.description && deck.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+
+    if (filteredDecks.length > 0) {
+        if (!activeLibraryDeckId || !filteredDecks.some(d => d.id === activeLibraryDeckId)) {
+            activeLibraryDeckId = filteredDecks[0].id;
+        }
+    } else {
+        activeLibraryDeckId = null;
     }
 
-    if (savedDecks.length === 0) {
-        container.innerHTML = `
-            <div class="study-placeholder">
-                <div class="placeholder-mascot">📇</div>
-                <h3>My Flashcards Library</h3>
-                <p>No saved flashcard decks yet! Ask frogGPT to generate some flashcards for you, then click "Save to Library".</p>
-                <button class="btn btn-secondary btn-sm" onclick="showStudyPanelPlaceholder()" style="margin-top: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--panel-border); color:#fff; padding: 6px 12px; border-radius:8px; cursor:pointer;">Back</button>
+    let leftHTML = `
+        <div class="library-left-col">
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <label style="font-weight:600; color:var(--color-sage); font-size:0.75rem; text-transform:uppercase;">Search Decks</label>
+                <input type="text" id="library-deck-search" placeholder="Search sets..." value="${searchQuery}" oninput="handleLibrarySearch(this.value)" style="padding:8px 12px; border-radius:8px; border:1px solid var(--panel-border); background:rgba(0,0,0,0.2); color:#fff; font-family:var(--font-body); font-size:0.85rem; outline:none; width: 100%;">
+            </div>
+            
+            <div style="display:flex; flex-direction:column; gap:8px; flex-grow:1; overflow-y:auto; margin-top:8px;">
+    `;
+
+    if (filteredDecks.length === 0) {
+        leftHTML += `
+            <div style="text-align:center; color:var(--color-text-dim); font-size:0.85rem; padding:20px 0;">
+                No sets found, ribbit.
             </div>
         `;
     } else {
-        const listHTML = savedDecks.map((deck) => `
-            <div class="flashcard-library-item">
-                <div class="deck-info">
+        filteredDecks.forEach(deck => {
+            const isSelected = deck.id === activeLibraryDeckId;
+            leftHTML += `
+                <div class="library-set-item ${isSelected ? 'selected' : ''}" onclick="selectLibraryDeck('${deck.id}')">
                     <h4>${escapeHTML(deck.title)}</h4>
-                    <p>${deck.cards.length} Cards • Saved on ${new Date(deck.timestamp).toLocaleDateString()}</p>
+                    <p>${deck.cards.length} Cards</p>
                 </div>
-                <div class="deck-actions">
-                    <button class="btn btn-primary btn-sm" onclick="playFlashcardDeckInPanel('${deck.id}')" style="background: var(--color-mint); border: none; color: var(--bg-dark); font-weight: bold; padding: 5px 12px; border-radius: 8px; cursor: pointer; font-size: 0.8rem;">Study</button>
-                    <button class="btn btn-secondary btn-sm" onclick="deleteFlashcardDeckInPanel('${deck.id}')" style="background: rgba(200, 70, 70, 0.15); border: 1px solid rgba(200, 70, 70, 0.3); color: #f7a3a3; padding: 5px 12px; border-radius: 8px; cursor: pointer; font-size: 0.8rem;">Delete</button>
-                </div>
+            `;
+        });
+    }
+
+    leftHTML += `
+            </div>
+        </div>
+    `;
+
+    let rightHTML = `
+        <div class="library-right-col">
+    `;
+
+    if (!activeLibraryDeckId) {
+        rightHTML += `
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; flex-grow:1; text-align:center; color:var(--color-text-dim); padding:40px 20px;">
+                <span style="font-size:2.5rem; margin-bottom:12px;">📇</span>
+                <h3>Select a Study Set</h3>
+                <p style="font-size:0.9rem; max-width:280px; margin-top:4px;">Select a set to preview terms, study, or edit, or click 'Create Set' to start a new one!</p>
+            </div>
+        `;
+    } else {
+        const deck = savedDecks.find(d => d.id === activeLibraryDeckId);
+        const cardRowsHTML = deck.cards.map(card => `
+            <div class="library-card-item">
+                <span class="library-card-term">${escapeHTML(card.question || card.term || '')}</span>
+                <span class="library-card-def">${escapeHTML(card.answer || card.definition || '')}</span>
             </div>
         `).join('');
 
-        container.innerHTML = `
-            <div class="flashcards-library-container" style="display:flex; flex-direction:column; gap:16px;">
-                <div class="player-header">
-                    <h3>📂 My Flashcards Library</h3>
-                    <button class="btn btn-secondary btn-sm" onclick="showStudyPanelPlaceholder()" style="background: rgba(255,255,255,0.05); border: 1px solid var(--panel-border); color:#fff; padding: 6px 12px; border-radius:8px; cursor:pointer;">Close Library</button>
+        rightHTML += `
+            <div style="display:flex; flex-direction:column; gap:8px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px;">
+                <h3 style="color:var(--color-cream); font-family:var(--font-heading); font-size:1.35rem; margin:0;">${escapeHTML(deck.title)}</h3>
+                <p style="color:var(--color-text-dim); font-size:0.85rem; margin:0; line-height:1.4;">${escapeHTML(deck.description || 'No description provided.')}</p>
+                
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+                    <button class="btn btn-primary btn-sm" onclick="playFlashcardDeckInPanel('${deck.id}')" style="background:var(--color-sage); border:none; color:#fff; font-weight:bold; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:4px;">📇 Study Cards</button>
+                    <button class="btn btn-primary btn-sm" onclick="playMatchingFromLibrary('${deck.id}')" style="background:var(--color-mint); border:none; color:var(--bg-dark); font-weight:bold; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:4px;">🍃 Play Match</button>
+                    <button class="btn btn-primary btn-sm" onclick="playBlasterFromLibrary('${deck.id}')" style="background:var(--color-mint); border:none; color:var(--bg-dark); font-weight:bold; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:4px;">💧 Play Blaster</button>
+                    <button class="btn btn-secondary btn-sm" onclick="openAddSetModal('${deck.id}')" style="background:rgba(255,255,255,0.05); border:1px solid var(--panel-border); color:#fff; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:4px;">✏️ Edit Set</button>
+                    <button class="btn btn-secondary btn-sm" onclick="deleteFlashcardDeckInPanel('${deck.id}')" style="background:rgba(200, 70, 70, 0.15); border:1px solid rgba(200, 70, 70, 0.3); color:#f7a3a3; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:4px;">🗑️ Delete</button>
                 </div>
-                <div class="flashcards-library-list">
-                    ${listHTML}
+            </div>
+            
+            <div style="flex-grow:1; display:flex; flex-direction:column; gap:8px; margin-top:4px; overflow:hidden;">
+                <label style="font-weight:600; color:var(--color-sage); font-size:0.75rem; text-transform:uppercase; margin-bottom:2px;">Cards in this Set (${deck.cards.length})</label>
+                <div class="library-card-list">
+                    ${cardRowsHTML}
                 </div>
             </div>
         `;
     }
+
+    rightHTML += `
+        </div>
+    `;
+
+    container.innerHTML = `
+        <div class="flashcards-library-container" style="display:flex; flex-direction:column; gap:12px; height:100%; overflow:hidden;">
+            <div class="player-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
+                <h3 style="margin:0; font-family:var(--font-heading); color:var(--color-cream); display:flex; align-items:center; gap:6px;">📂 Flashcard Library</h3>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-primary btn-sm" onclick="openAddSetModal()" style="background:var(--color-mint); border:none; color:var(--bg-dark); font-weight:bold; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:0.8rem;">➕ Create Set</button>
+                    <button class="btn btn-secondary btn-sm" onclick="showStudyPanelPlaceholder()" style="background:rgba(255,255,255,0.05); border:1px solid var(--panel-border); color:#fff; padding:6px 12px; border-radius:8px; cursor:pointer;">Close</button>
+                </div>
+            </div>
+            
+            <div class="library-two-col">
+                ${leftHTML}
+                ${rightHTML}
+            </div>
+        </div>
+    `;
 }
 
 function playFlashcardDeckInPanel(deckId) {
@@ -2778,6 +3144,987 @@ async function loadFrogGPTSession(sessionId) {
     }
 }
 
+// --- STUDY PANEL MODALS & NEW TASK ACTIONS ---
+function openAddTaskModal(datePrefill = null) {
+    const modal = document.getElementById('add-task-modal');
+    const form = document.getElementById('task-form');
+    if (!modal) return;
+    
+    // Reset form
+    form.reset();
+    document.getElementById('edit-task-id').value = '';
+    document.getElementById('modal-title').textContent = 'New Task Details';
+    document.getElementById('btn-save-task').textContent = 'Save Task';
+    
+    // Default Date prefill (Mock current date or today)
+    const todayStr = '2026-06-22';
+    document.getElementById('task-due-date-modal').value = datePrefill || todayStr;
+    
+    // Hide Custom Category Inputs
+    const customGroup = document.getElementById('custom-category-group');
+    if (customGroup) customGroup.classList.add('hidden');
+    
+    modal.classList.add('open');
+}
+
+function closeAddTaskModal() {
+    const modal = document.getElementById('add-task-modal');
+    if (modal) modal.classList.remove('open');
+}
+
+window.openAddTaskModal = openAddTaskModal;
+window.closeAddTaskModal = closeAddTaskModal;
+
+window.handleCategorySelectChange = function(value) {
+    const customGroup = document.getElementById('custom-category-group');
+    if (!customGroup) return;
+    if (value === '__add_new__') {
+        customGroup.classList.remove('hidden');
+        const input = document.getElementById('custom-category-name');
+        if (input) input.focus();
+    } else {
+        customGroup.classList.add('hidden');
+    }
+};
+
+window.saveCustomCategory = function() {
+    const input = document.getElementById('custom-category-name');
+    if (!input) return;
+    const catName = input.value.trim();
+    
+    if (!catName) return;
+    
+    const exists = ['school', 'work', ...customCategories.map(c => c.toLowerCase())].includes(catName.toLowerCase());
+    if (exists) {
+        alert('This category already exists, ribbit!');
+        return;
+    }
+    
+    customCategories.push(catName);
+    localStorage.setItem('froggy_custom_categories', JSON.stringify(customCategories));
+    populateCategoryDropdowns();
+    
+    // Select the new category in the form
+    const formSelect = document.getElementById('task-category-modal');
+    if (formSelect) formSelect.value = catName;
+    
+    const customGroup = document.getElementById('custom-category-group');
+    if (customGroup) customGroup.classList.add('hidden');
+    input.value = '';
+};
+
+window.handleCalendarCategorySelectChange = function(value) {
+    const customGroup = document.getElementById('cal-custom-category-group');
+    if (!customGroup) return;
+    if (value === '__add_new__') {
+        customGroup.classList.remove('hidden');
+        const input = document.getElementById('cal-custom-category-name');
+        if (input) input.focus();
+    } else {
+        customGroup.classList.add('hidden');
+    }
+};
+
+window.saveCalendarCustomCategory = function() {
+    const input = document.getElementById('cal-custom-category-name');
+    if (!input) return;
+    const catName = input.value.trim();
+    
+    if (!catName) return;
+    
+    const exists = ['school', 'work', ...customCategories.map(c => c.toLowerCase())].includes(catName.toLowerCase());
+    if (exists) {
+        alert('This category already exists, ribbit!');
+        return;
+    }
+    
+    customCategories.push(catName);
+    localStorage.setItem('froggy_custom_categories', JSON.stringify(customCategories));
+    populateCategoryDropdowns();
+    
+    // Select the new category in the form
+    const calCatSelect = document.getElementById('cal-item-category');
+    if (calCatSelect) {
+        calCatSelect.value = catName;
+    }
+    const customGroup = document.getElementById('cal-custom-category-group');
+    if (customGroup) customGroup.classList.add('hidden');
+    input.value = '';
+};
+
+window.editTask = function(id) {
+    const task = allTasks.find(t => (t.id + '') === (id + ''));
+    if (!task) return;
+    
+    openAddTaskModal();
+    
+    document.getElementById('edit-task-id').value = task.id;
+    document.getElementById('modal-title').textContent = 'Edit Task';
+    document.getElementById('btn-save-task').textContent = 'Save Changes';
+    
+    document.getElementById('task-title').value = task.title || '';
+    document.getElementById('task-due-date-modal').value = task.due_date || '2026-06-22';
+    document.getElementById('task-urgency-modal').value = task.urgency || 'medium';
+    
+    populateCategoryDropdowns();
+    const selectEl = document.getElementById('task-category-modal');
+    if (selectEl) selectEl.value = task.category || 'School';
+    document.getElementById('task-notes').value = task.notes || '';
+};
+
+window.handleFormSubmit = async function(e) {
+    e.preventDefault();
+    
+    const editId = document.getElementById('edit-task-id').value;
+    const title = document.getElementById('task-title').value.trim();
+    const dueDate = document.getElementById('task-due-date-modal').value || null;
+    const urgency = document.getElementById('task-urgency-modal').value || 'medium';
+    let category = document.getElementById('task-category-modal').value || 'School';
+    const notes = document.getElementById('task-notes').value.trim() || null;
+    
+    if (!title) return;
+
+    if (editId) {
+        // Edit Mode
+        if (isLoggedIn) {
+            try {
+                const response = await fetch(`/api/tasks/${editId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: title,
+                        due_date: dueDate,
+                        category: category,
+                        urgency: urgency,
+                        notes: notes
+                    })
+                });
+                if (response.ok) {
+                    closeAddTaskModal();
+                    fetchTasks();
+                }
+            } catch (err) {
+                console.error("Error updating task:", err);
+            }
+        } else {
+            const tasks = getLocalTasks();
+            const taskIndex = tasks.findIndex(t => (t.id + '') === (editId + ''));
+            if (taskIndex !== -1) {
+                tasks[taskIndex] = {
+                    ...tasks[taskIndex],
+                    title,
+                    due_date: dueDate,
+                    category,
+                    urgency,
+                    notes
+                };
+                saveLocalTasks(tasks);
+                closeAddTaskModal();
+                fetchTasks();
+            }
+        }
+    } else {
+        // Add Mode
+        if (isLoggedIn) {
+            try {
+                const response = await fetch('/api/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        title,
+                        due_date: dueDate,
+                        category,
+                        urgency,
+                        notes
+                    })
+                });
+                if (response.ok) {
+                    closeAddTaskModal();
+                    speak('taskAdded');
+                    fetchTasks();
+                }
+            } catch (err) {
+                console.error("Error adding task:", err);
+            }
+        } else {
+            const tasks = getLocalTasks();
+            const newTask = {
+                id: 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                title,
+                completed: false,
+                created_at: new Date().toISOString(),
+                due_date: dueDate,
+                category,
+                urgency,
+                notes
+            };
+            tasks.unshift(newTask);
+            saveLocalTasks(tasks);
+            closeAddTaskModal();
+            speak('taskAdded');
+            fetchTasks();
+        }
+    }
+};
+
+
+// --- LEFT PANEL TAB SWITCHING ---
+window.switchLeftPanel = function(tabName) {
+    document.querySelectorAll('.panel-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        btn.style.borderBottomColor = 'transparent';
+        btn.style.color = 'var(--color-text-dim)';
+    });
+    
+    const activeBtn = document.getElementById(`tab-left-${tabName}`);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+        activeBtn.style.borderBottomColor = 'var(--color-sage)';
+        activeBtn.style.color = 'var(--color-cream)';
+    }
+    
+    if (tabName === 'timer') {
+        document.getElementById('timer-inner-content').classList.remove('hidden');
+        document.getElementById('games-inner-content').classList.add('hidden');
+    } else {
+        document.getElementById('timer-inner-content').classList.add('hidden');
+        document.getElementById('games-inner-content').classList.remove('hidden');
+        initGamesMenu();
+    }
+};
+
+
+// --- STUDY GAMES SYSTEM ---
+let gamesList = [];
+let currentGameSet = null;
+let currentActiveGame = null; // 'matching' or 'blaster'
+
+// Seeding/loading default sets
+function loadFlashcardSets() {
+    let savedDecks = [];
+    try {
+        savedDecks = JSON.parse(localStorage.getItem('saved_flashcard_decks'));
+        if (!Array.isArray(savedDecks)) {
+            savedDecks = [];
+        }
+    } catch (e) {
+        savedDecks = [];
+    }
+    
+    const defaultSets = [
+        {
+            id: 'set-froggy-biology',
+            title: '🐸 Froggy Biology',
+            cards: [
+                { question: 'Amphibian', answer: 'An ectothermic vertebrate that transitions from water to land' },
+                { question: 'Tadpole', answer: 'The aquatic larval stage of a frog with gills and a tail' },
+                { question: 'Metamorphosis', answer: 'The developmental process of transforming from larva to adult' },
+                { question: 'Ectothermic', answer: 'Cold-blooded; relying on the external environment for body heat' },
+                { question: 'Permeable Skin', answer: 'Skin that allows water and oxygen to absorb directly' },
+                { question: 'Hibernation', answer: 'State of dormancy in mud at the bottom of ponds during winter' }
+            ]
+        },
+        {
+            id: 'set-web-dev',
+            title: '💻 Web Development',
+            cards: [
+                { question: 'HTML', answer: 'Markup language used to structure web pages' },
+                { question: 'CSS', answer: 'Stylesheets used to design page presentation and layout' },
+                { question: 'JavaScript', answer: 'Programming language that adds behavior and interactivity' },
+                { question: 'DOM', answer: 'Document Object Model; the API to interact with HTML nodes' },
+                { question: 'localStorage', answer: 'Web storage API that persists key-value pairs in the browser' },
+                { question: 'API', answer: 'Application Programming Interface; a protocol for apps to communicate' }
+            ]
+        }
+    ];
+
+    let modified = false;
+    defaultSets.forEach(defSet => {
+        const exists = savedDecks.some(d => d.id === defSet.id);
+        if (!exists) {
+            savedDecks.push(defSet);
+            modified = true;
+        }
+    });
+
+    if (modified || savedDecks.length === 0) {
+        if (savedDecks.length === 0) {
+            savedDecks = defaultSets;
+        }
+        localStorage.setItem('saved_flashcard_decks', JSON.stringify(savedDecks));
+    }
+    return savedDecks;
+}
+
+function initGamesMenu() {
+    gamesList = loadFlashcardSets();
+    const dropdown = document.getElementById('game-set-select');
+    if (!dropdown) return;
+    
+    dropdown.innerHTML = '';
+    gamesList.forEach(set => {
+        const opt = document.createElement('option');
+        opt.value = set.id;
+        opt.textContent = `${set.title} (${set.cards.length} cards)`;
+        dropdown.appendChild(opt);
+    });
+    
+    showView('game-menu-view');
+}
+
+function showView(viewId) {
+    const views = [
+        'game-menu-view',
+        'game-matching-view',
+        'game-blaster-setup-view',
+        'game-blaster-play-view',
+        'game-results-view'
+    ];
+    views.forEach(v => {
+        const el = document.getElementById(v);
+        if (el) {
+            if (v === viewId) el.classList.remove('hidden');
+            else el.classList.add('hidden');
+        }
+    });
+}
+
+window.exitGame = function() {
+    cleanupBlasterGame();
+    cleanupMatchingGame();
+    showView('game-menu-view');
+};
+
+
+// --- MATCHING GAME LOGIC ---
+let matchingTimerInterval = null;
+let matchingStartTime = 0;
+let matchingSelectedCard = null;
+let matchingPairsLeft = 0;
+
+window.startMatchingGame = function() {
+    const selectEl = document.getElementById('game-set-select');
+    if (!selectEl) return;
+    const setId = selectEl.value;
+    currentGameSet = gamesList.find(s => s.id === setId);
+    
+    if (!currentGameSet || currentGameSet.cards.length < 3) {
+        alert("You need at least 3 cards in your deck to play matching, ribbit!");
+        return;
+    }
+    
+    currentActiveGame = 'matching';
+    showView('game-matching-view');
+    restartMatchingGame();
+};
+
+window.restartMatchingGame = function() {
+    cleanupMatchingGame();
+    
+    const container = document.getElementById('matching-grid-container');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    // Get up to 6 cards (12 elements) to fit nicely in 3 columns
+    const cardsToUse = currentGameSet.cards.slice(0, 6);
+    matchingPairsLeft = cardsToUse.length;
+    
+    let items = [];
+    cardsToUse.forEach((card, idx) => {
+        items.push({
+            id: `concept-${idx}`,
+            text: card.question || card.term,
+            type: 'concept',
+            matchId: idx
+        });
+        items.push({
+            id: `def-${idx}`,
+            text: card.answer || card.definition,
+            type: 'definition',
+            matchId: idx
+        });
+    });
+    
+    // Shuffle
+    items.sort(() => Math.random() - 0.5);
+    
+    items.forEach(item => {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'matching-card';
+        cardEl.textContent = item.text;
+        cardEl.dataset.type = item.type;
+        cardEl.dataset.matchId = item.matchId;
+        cardEl.dataset.id = item.id;
+        cardEl.onclick = () => handleMatchingCardClick(cardEl);
+        container.appendChild(cardEl);
+    });
+    
+    // Timer
+    const timerDisplay = document.getElementById('match-timer');
+    if (timerDisplay) timerDisplay.textContent = '⏱️ 0.0s';
+    
+    // Best Time
+    const bestScore = localStorage.getItem(`high_score_match_${currentGameSet.id}`) || '--';
+    const bestDisplay = document.getElementById('match-high-score');
+    if (bestDisplay) bestDisplay.textContent = `🏆 Best: ${bestScore}s`;
+    
+    matchingStartTime = performance.now();
+    matchingTimerInterval = setInterval(() => {
+        const elapsed = (performance.now() - matchingStartTime) / 1000;
+        if (timerDisplay) timerDisplay.textContent = `⏱️ ${elapsed.toFixed(1)}s`;
+    }, 100);
+};
+
+function handleMatchingCardClick(cardEl) {
+    if (cardEl.classList.contains('matched') || cardEl.classList.contains('selected')) return;
+    
+    // Select first card
+    if (!matchingSelectedCard) {
+        matchingSelectedCard = cardEl;
+        cardEl.classList.add('selected');
+        return;
+    }
+    
+    // Already selected this card
+    if (matchingSelectedCard === cardEl) return;
+    
+    const card1 = matchingSelectedCard;
+    const card2 = cardEl;
+    
+    // Check if match
+    if (card1.dataset.matchId === card2.dataset.matchId && card1.dataset.type !== card2.dataset.type) {
+        // MATCH!
+        card1.classList.remove('selected');
+        card1.classList.add('matched');
+        card2.classList.add('matched');
+        matchingSelectedCard = null;
+        matchingPairsLeft--;
+        
+        playRibbit();
+        
+        if (matchingPairsLeft === 0) {
+            // Victory!
+            clearInterval(matchingTimerInterval);
+            const scoreTime = ((performance.now() - matchingStartTime) / 1000).toFixed(1);
+            showMatchingVictory(scoreTime);
+        }
+    } else {
+        // MISMATCH!
+        card2.classList.add('selected');
+        card1.classList.add('wrong');
+        card2.classList.add('wrong');
+        
+        matchingSelectedCard = null;
+        
+        setTimeout(() => {
+            card1.classList.remove('selected', 'wrong');
+            card2.classList.remove('selected', 'wrong');
+        }, 600);
+    }
+}
+
+function showMatchingVictory(scoreTime) {
+    const resultsEmoji = document.getElementById('results-emoji');
+    const resultsTitle = document.getElementById('results-title');
+    const resultsMessage = document.getElementById('results-message');
+    const curVal = document.getElementById('results-val-current');
+    const bestVal = document.getElementById('results-val-best');
+    const replayBtn = document.getElementById('btn-replay');
+    
+    if (resultsEmoji) resultsEmoji.textContent = '🏆';
+    if (resultsTitle) resultsTitle.textContent = 'Victory!';
+    if (resultsMessage) resultsMessage.textContent = `Excellent job! You matched all pairs in the deck "${currentGameSet.title}"!`;
+    
+    if (curVal) curVal.textContent = `${scoreTime}s`;
+    
+    const key = `high_score_match_${currentGameSet.id}`;
+    let best = localStorage.getItem(key);
+    if (!best || parseFloat(scoreTime) < parseFloat(best)) {
+        localStorage.setItem(key, scoreTime);
+        best = scoreTime;
+        if (resultsTitle) resultsTitle.textContent = 'New High Score! 🌟';
+    }
+    
+    if (bestVal) bestVal.textContent = `${best}s`;
+    
+    if (replayBtn) replayBtn.onclick = () => restartMatchingGame();
+    
+    showView('game-results-view');
+}
+
+function cleanupMatchingGame() {
+    if (matchingTimerInterval) {
+        clearInterval(matchingTimerInterval);
+        matchingTimerInterval = null;
+    }
+    matchingSelectedCard = null;
+}
+
+
+// --- BLASTER GAME LOGIC ---
+let blasterPromptMode = 'def-to-concept'; // def-to-concept or concept-to-def
+let blasterScore = 0;
+let blasterLives = 3;
+let blasterCurrentIndex = 0;
+let blasterActiveTargets = [];
+let blasterActiveBullets = [];
+let blasterActiveSplashes = [];
+let blasterTargetSpeed = 1.0;
+let blasterBulletSpeed = 6.0;
+let blasterFrogX = 50; // percentage 5-95
+let blasterGameLoopId = null;
+let blasterLastTime = 0;
+let blasterKeyStates = { ArrowLeft: false, ArrowRight: false, KeyA: false, KeyD: false };
+let blasterQuestionSet = [];
+let blasterSpawnTimer = 0;
+
+window.setupBlasterGame = function() {
+    const selectEl = document.getElementById('game-set-select');
+    if (!selectEl) return;
+    const setId = selectEl.value;
+    currentGameSet = gamesList.find(s => s.id === setId);
+    
+    if (!currentGameSet || currentGameSet.cards.length === 0) {
+        alert("Select a valid deck to play, ribbit!");
+        return;
+    }
+    
+    showView('game-blaster-setup-view');
+};
+
+window.startBlasterGame = function() {
+    const modeEl = document.querySelector('input[name="blaster-prompt-mode"]:checked');
+    blasterPromptMode = modeEl ? modeEl.value : 'def-to-concept';
+    
+    blasterScore = 0;
+    blasterLives = 3;
+    blasterCurrentIndex = 0;
+    
+    currentActiveGame = 'blaster';
+    
+    // Shuffle cards for questions
+    blasterQuestionSet = [...currentGameSet.cards].sort(() => Math.random() - 0.5);
+    
+    // Reset key states
+    blasterKeyStates = { ArrowLeft: false, ArrowRight: false, KeyA: false, KeyD: false };
+    
+    showView('game-blaster-play-view');
+    initBlasterControls();
+    loadBlasterQuestion();
+    
+    // Start loop
+    blasterLastTime = performance.now();
+    blasterSpawnTimer = 0;
+    if (blasterGameLoopId) cancelAnimationFrame(blasterGameLoopId);
+    blasterGameLoopId = requestAnimationFrame(blasterGameLoop);
+};
+
+function initBlasterControls() {
+    // Unbind previous just in case
+    const arena = document.getElementById('blaster-arena');
+    if (!arena) return;
+    
+    arena.removeEventListener('mousemove', handleBlasterMouseMove);
+    arena.removeEventListener('click', handleBlasterMouseClick);
+    window.removeEventListener('keydown', handleBlasterKeyDown);
+    window.removeEventListener('keyup', handleBlasterKeyUp);
+    
+    arena.addEventListener('mousemove', handleBlasterMouseMove);
+    arena.addEventListener('click', handleBlasterMouseClick);
+    window.addEventListener('keydown', handleBlasterKeyDown);
+    window.addEventListener('keyup', handleBlasterKeyUp);
+}
+
+function handleBlasterMouseMove(e) {
+    const arena = document.getElementById('blaster-arena');
+    if (!arena) return;
+    const rect = arena.getBoundingClientRect();
+    const relativeX = e.clientX - rect.left;
+    blasterFrogX = Math.max(5, Math.min(95, (relativeX / rect.width) * 100));
+}
+
+function handleBlasterMouseClick(e) {
+    e.preventDefault();
+    fireBlasterBullet(e);
+}
+
+function handleBlasterKeyDown(e) {
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+        blasterKeyStates.ArrowLeft = true;
+        e.preventDefault();
+    }
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+        blasterKeyStates.ArrowRight = true;
+        e.preventDefault();
+    }
+    if (e.code === 'Space') {
+        fireBlasterBullet(); // Fires vertically up
+        e.preventDefault();
+    }
+}
+
+function handleBlasterKeyUp(e) {
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+        blasterKeyStates.ArrowLeft = false;
+    }
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+        blasterKeyStates.ArrowRight = false;
+    }
+}
+
+function fireBlasterBullet(clickEvent = null) {
+    const arena = document.getElementById('blaster-arena');
+    if (!arena) return;
+    const arenaWidth = arena.clientWidth;
+    const arenaHeight = arena.clientHeight;
+    
+    const frogX_px = (blasterFrogX / 100) * arenaWidth;
+    
+    const bulletEl = document.createElement('div');
+    bulletEl.className = 'blaster-bullet';
+    bulletEl.textContent = '💧';
+    
+    const layer = document.getElementById('blaster-objects-layer');
+    if (layer) {
+        layer.appendChild(bulletEl);
+        bulletEl.style.left = `${frogX_px}px`;
+        bulletEl.style.top = `${arenaHeight - 40}px`;
+        
+        let vx = 0;
+        let vy = -blasterBulletSpeed;
+        
+        if (clickEvent) {
+            const rect = arena.getBoundingClientRect();
+            const clickX = clickEvent.clientX - rect.left;
+            const clickY = clickEvent.clientY - rect.top;
+            
+            const dx = clickX - frogX_px;
+            const dy = clickY - (arenaHeight - 40);
+            const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+            
+            vx = (dx / dist) * blasterBulletSpeed;
+            vy = (dy / dist) * blasterBulletSpeed;
+        }
+        
+        blasterActiveBullets.push({
+            element: bulletEl,
+            x: frogX_px,
+            y: arenaHeight - 40,
+            vx: vx,
+            vy: vy
+        });
+    }
+}
+
+function loadBlasterQuestion() {
+    const questionBox = document.getElementById('blaster-question-box');
+    const layer = document.getElementById('blaster-objects-layer');
+    if (!questionBox || !layer) return;
+    
+    // Remove previous targets
+    blasterActiveTargets.forEach(t => t.element.remove());
+    blasterActiveTargets = [];
+    blasterActiveBullets.forEach(b => b.element.remove());
+    blasterActiveBullets = [];
+    
+    updateBlasterStatsDisplay();
+    
+    if (blasterCurrentIndex >= blasterQuestionSet.length) {
+        // Victory!
+        endBlasterGame(true);
+        return;
+    }
+    
+    const currentCard = blasterQuestionSet[blasterCurrentIndex];
+    const isDefPrompt = blasterPromptMode === 'def-to-concept';
+    
+    const questionText = isDefPrompt ? (currentCard.answer || currentCard.definition) : (currentCard.question || currentCard.term);
+    const correctAnswerText = isDefPrompt ? (currentCard.question || currentCard.term) : (currentCard.answer || currentCard.definition);
+    
+    questionBox.innerHTML = `<strong>AIM & BLAST:</strong> ${escapeHTML(questionText)}`;
+    
+    // Choose 2 other incorrect options for floating choices
+    const otherCards = currentGameSet.cards.filter(c => c !== currentCard);
+    const shuffledOthers = otherCards.sort(() => Math.random() - 0.5).slice(0, 2);
+    
+    const options = [correctAnswerText];
+    shuffledOthers.forEach(c => {
+        options.push(isDefPrompt ? (c.question || c.term) : (c.answer || c.definition));
+    });
+    
+    // Shuffle options order
+    options.sort(() => Math.random() - 0.5);
+    
+    // Spawn targets
+    const arenaWidth = document.getElementById('blaster-arena').clientWidth;
+    const spacing = arenaWidth / (options.length + 1);
+    
+    options.forEach((optText, index) => {
+        const targetEl = document.createElement('div');
+        targetEl.className = 'blaster-target';
+        targetEl.innerHTML = optText;
+        layer.appendChild(targetEl);
+        
+        const isCorrect = optText === correctAnswerText;
+        const targetWidth = targetEl.offsetWidth || 120;
+        
+        const initialX = spacing * (index + 1) - (targetWidth / 2);
+        const initialY = -40 - (Math.random() * 50); // staggered starting heights
+        
+        targetEl.style.left = `${initialX}px`;
+        targetEl.style.top = `${initialY}px`;
+        
+        blasterActiveTargets.push({
+            element: targetEl,
+            x: initialX,
+            y: initialY,
+            width: targetWidth,
+            height: targetEl.offsetHeight || 36,
+            text: optText,
+            isCorrect: isCorrect,
+            speedY: 0.7 + (Math.random() * 0.4) // staggered drift speeds
+        });
+    });
+}
+
+function blasterGameLoop(timestamp) {
+    if (currentActiveGame !== 'blaster') return;
+    
+    // Keyboard movement
+    const frogEl = document.getElementById('blaster-frog');
+    const arena = document.getElementById('blaster-arena');
+    if (!arena || !frogEl) return;
+    
+    const arenaWidth = arena.clientWidth;
+    const arenaHeight = arena.clientHeight;
+    
+    if (blasterKeyStates.ArrowLeft) {
+        blasterFrogX = Math.max(5, blasterFrogX - 1.8);
+    }
+    if (blasterKeyStates.ArrowRight) {
+        blasterFrogX = Math.min(95, blasterFrogX + 1.8);
+    }
+    
+    // Update frog visual position
+    frogEl.style.left = `${blasterFrogX}%`;
+    
+    // Update target locations
+    blasterActiveTargets.forEach(target => {
+        target.y += target.speedY;
+        target.element.style.top = `${target.y}px`;
+        target.height = target.element.offsetHeight || 36;
+        
+        // Re-read width/offset in case layout shifts
+        target.width = target.element.offsetWidth || 120;
+        
+        // Check if target hit the bottom
+        if (target.y > arenaHeight - 70) {
+            // If correct hit bottom, lose a life
+            if (target.isCorrect) {
+                blasterLives--;
+                speak('taskOverdue'); // play sad sound or cue
+                if (blasterLives <= 0) {
+                    endBlasterGame(false);
+                    return;
+                } else {
+                    blasterCurrentIndex++;
+                    loadBlasterQuestion();
+                }
+            } else {
+                // Wrong targets just float out of range
+                target.y = -50;
+                target.element.style.top = `${target.y}px`;
+            }
+        }
+    });
+    
+    // Update bullets
+    for (let bIdx = blasterActiveBullets.length - 1; bIdx >= 0; bIdx--) {
+        const bullet = blasterActiveBullets[bIdx];
+        bullet.x += bullet.vx;
+        bullet.y += bullet.vy;
+        bullet.element.style.left = `${bullet.x}px`;
+        bullet.element.style.top = `${bullet.y}px`;
+        
+        let hit = false;
+        
+        // Collision checks
+        for (let tIdx = 0; tIdx < blasterActiveTargets.length; tIdx++) {
+            const target = blasterActiveTargets[tIdx];
+            
+            // Check bounding box
+            if (bullet.x >= target.x && bullet.x <= target.x + target.width &&
+                bullet.y >= target.y && bullet.y <= target.y + target.height) {
+                
+                hit = true;
+                bullet.element.remove();
+                blasterActiveBullets.splice(bIdx, 1);
+                
+                spawnSplash(bullet.x, bullet.y);
+                
+                if (target.isCorrect) {
+                    // Correct!
+                    target.element.classList.add('target-correct-hit');
+                    blasterScore += 10;
+                    playRibbit();
+                    
+                    setTimeout(() => {
+                        blasterCurrentIndex++;
+                        loadBlasterQuestion();
+                    }, 400);
+                } else {
+                    // Incorrect hit
+                    target.element.classList.add('target-wrong-hit');
+                    blasterLives--;
+                    
+                    setTimeout(() => {
+                        target.element.classList.remove('target-wrong-hit');
+                    }, 400);
+                    
+                    if (blasterLives <= 0) {
+                        endBlasterGame(false);
+                        return;
+                    }
+                    updateBlasterStatsDisplay();
+                }
+                break;
+            }
+        }
+        
+        if (!hit && (bullet.y < 0 || bullet.x < 0 || bullet.x > arenaWidth || bullet.y > arenaHeight)) {
+            bullet.element.remove();
+            blasterActiveBullets.splice(bIdx, 1);
+        }
+    }
+    
+    // Update particle splashes
+    for (let sIdx = blasterActiveSplashes.length - 1; sIdx >= 0; sIdx--) {
+        const splash = blasterActiveSplashes[sIdx];
+        splash.life -= 0.05;
+        if (splash.life <= 0) {
+            splash.element.remove();
+            blasterActiveSplashes.splice(sIdx, 1);
+        } else {
+            splash.x += splash.vx;
+            splash.y += splash.vy;
+            splash.element.style.left = `${splash.x}px`;
+            splash.element.style.top = `${splash.y}px`;
+            splash.element.style.opacity = splash.life;
+        }
+    }
+    
+    blasterGameLoopId = requestAnimationFrame(blasterGameLoop);
+}
+
+function spawnSplash(x, y) {
+    const layer = document.getElementById('blaster-objects-layer');
+    if (!layer) return;
+    
+    for (let i = 0; i < 6; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'splash-particle';
+        layer.appendChild(particle);
+        
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1.0 + Math.random() * 2.0;
+        
+        const px = x;
+        const py = y;
+        
+        particle.style.left = `${px}px`;
+        particle.style.top = `${py}px`;
+        
+        blasterActiveSplashes.push({
+            element: particle,
+            x: px,
+            y: py,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 1.0
+        });
+    }
+}
+
+function updateBlasterStatsDisplay() {
+    const scoreEl = document.getElementById('blaster-score');
+    const livesEl = document.getElementById('blaster-lives');
+    const progressEl = document.getElementById('blaster-progress');
+    
+    if (scoreEl) scoreEl.textContent = `Score: ${blasterScore}`;
+    if (livesEl) {
+        let flowerStr = '';
+        for (let i = 0; i < blasterLives; i++) flowerStr += '🌸';
+        for (let i = blasterLives; i < 3; i++) flowerStr += '🤍';
+        livesEl.textContent = flowerStr;
+    }
+    if (progressEl) {
+        const total = blasterQuestionSet.length;
+        progressEl.textContent = `${Math.min(total, blasterCurrentIndex + 1)}/${total}`;
+    }
+}
+
+function endBlasterGame(victory) {
+    cleanupBlasterGame();
+    
+    const resultsEmoji = document.getElementById('results-emoji');
+    const resultsTitle = document.getElementById('results-title');
+    const resultsMessage = document.getElementById('results-message');
+    const curVal = document.getElementById('results-val-current');
+    const bestVal = document.getElementById('results-val-best');
+    const replayBtn = document.getElementById('btn-replay');
+    
+    if (resultsEmoji) resultsEmoji.textContent = victory ? '🐸🏆' : '🍂💀';
+    if (resultsTitle) resultsTitle.textContent = victory ? 'Victory!' : 'Game Over!';
+    
+    const deckTitle = currentGameSet ? currentGameSet.title : 'deck';
+    if (resultsMessage) {
+        resultsMessage.textContent = victory 
+            ? `Fantastic! You blasted all correct answers in "${deckTitle}"!`
+            : `Oh no! Lily ran out of flowers. Try reviewing the cards in "${deckTitle}" and replay!`;
+    }
+    
+    if (curVal) curVal.textContent = blasterScore;
+    
+    const key = `high_score_blaster_${currentGameSet.id}`;
+    let best = localStorage.getItem(key) || 0;
+    if (blasterScore > parseInt(best)) {
+        localStorage.setItem(key, blasterScore);
+        best = blasterScore;
+        if (victory && resultsTitle) resultsTitle.textContent = 'New High Score! 🌟';
+    }
+    
+    if (bestVal) bestVal.textContent = best;
+    
+    if (replayBtn) replayBtn.onclick = () => startBlasterGame();
+    
+    showView('game-results-view');
+}
+
+function cleanupBlasterGame() {
+    if (blasterGameLoopId) {
+        cancelAnimationFrame(blasterGameLoopId);
+        blasterGameLoopId = null;
+    }
+    
+    const arena = document.getElementById('blaster-arena');
+    if (arena) {
+        arena.removeEventListener('mousemove', handleBlasterMouseMove);
+        arena.removeEventListener('click', handleBlasterMouseClick);
+    }
+    window.removeEventListener('keydown', handleBlasterKeyDown);
+    window.removeEventListener('keyup', handleBlasterKeyUp);
+    
+    // Clear DOM objects
+    const layer = document.getElementById('blaster-objects-layer');
+    if (layer) layer.innerHTML = '';
+    
+    blasterActiveTargets = [];
+    blasterActiveBullets = [];
+    blasterActiveSplashes = [];
+}
+
+
+// --- RESTORE ORIGINAL WINDOW EXPORTS ---
 window.openFrogGPTModal = openFrogGPTModal;
 window.closeFrogGPTModal = closeFrogGPTModal;
 window.handleQuickPrompt = handleQuickPrompt;
@@ -2798,3 +4145,251 @@ window.switchFrogGPTTab = switchFrogGPTTab;
 window.toggleFrogGPTHistoryList = toggleFrogGPTHistoryList;
 window.startNewFrogGPTSession = startNewFrogGPTSession;
 window.loadFrogGPTSession = loadFrogGPTSession;
+
+// Cozy Arcade Tab Switcher
+window.switchCozyArcadeGame = function(gameType) {
+    document.querySelectorAll('.games-tabs-bar .panel-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        btn.style.borderBottomColor = 'transparent';
+        btn.style.color = 'var(--color-text-dim)';
+    });
+    
+    const activeBtn = document.getElementById(`tab-game-${gameType}`);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+        activeBtn.style.borderBottomColor = 'var(--color-sage)';
+        activeBtn.style.color = 'var(--color-cream)';
+    }
+    
+    const container2048 = document.querySelector('.game-container-2048');
+    const containerStudy = document.getElementById('games-inner-content');
+    
+    if (gameType === '2048') {
+        if (container2048) container2048.classList.remove('hidden');
+        if (containerStudy) containerStudy.classList.add('hidden');
+        cleanupMatchingGame();
+        cleanupBlasterGame();
+    } else {
+        if (container2048) container2048.classList.add('hidden');
+        if (containerStudy) {
+            containerStudy.classList.remove('hidden');
+            initGamesMenu();
+        }
+    }
+};
+// --- FLASHCARD SET CREATION & EDIT MODAL ---
+function openAddSetModal(setId = null) {
+    const modal = document.getElementById('add-set-modal');
+    const form = document.getElementById('set-form');
+    if (!modal) return;
+    
+    form.reset();
+    document.getElementById('edit-set-id').value = '';
+    document.getElementById('set-modal-title').textContent = 'Create Flashcard Set';
+    document.getElementById('btn-save-set').textContent = 'Save Set';
+    
+    const container = document.getElementById('set-cards-list-container');
+    if (container) container.innerHTML = '';
+    
+    let savedDecks = loadFlashcardSets();
+    
+    if (setId) {
+        // Edit Mode
+        const deck = savedDecks.find(d => d.id === setId);
+        if (deck) {
+            document.getElementById('edit-set-id').value = deck.id;
+            document.getElementById('set-modal-title').textContent = 'Edit Flashcard Set';
+            document.getElementById('btn-save-set').textContent = 'Save Changes';
+            document.getElementById('set-title').value = deck.title || '';
+            document.getElementById('set-description').value = deck.description || '';
+            
+            if (deck.cards && deck.cards.length > 0) {
+                deck.cards.forEach(card => {
+                    addNewCardRow(card.question || card.term || '', card.answer || card.definition || '');
+                });
+            } else {
+                for (let i = 0; i < 3; i++) addNewCardRow();
+            }
+        }
+    } else {
+        // Create Mode - Start with 3 blank card rows
+        for (let i = 0; i < 3; i++) addNewCardRow();
+    }
+    
+    modal.classList.add('open');
+}
+
+function closeAddSetModal() {
+    const modal = document.getElementById('add-set-modal');
+    if (modal) modal.classList.remove('open');
+}
+
+function addNewCardRow(term = '', definition = '') {
+    const container = document.getElementById('set-cards-list-container');
+    if (!container) return;
+    
+    const rowEl = document.createElement('div');
+    rowEl.className = 'card-row';
+    rowEl.style.display = 'flex';
+    rowEl.style.gap = '8px';
+    rowEl.style.alignItems = 'center';
+    rowEl.style.width = '100%';
+    
+    const termInput = document.createElement('textarea');
+    termInput.placeholder = 'Term / Concept';
+    termInput.className = 'card-term-input';
+    termInput.value = term;
+    termInput.required = true;
+    termInput.rows = 1;
+    termInput.style.resize = 'none';
+    termInput.style.overflowY = 'hidden';
+    termInput.oninput = function() {
+        this.style.height = 'auto';
+        this.style.height = this.scrollHeight + 'px';
+    };
+    
+    const defInput = document.createElement('textarea');
+    defInput.placeholder = 'Definition / Answer';
+    defInput.className = 'card-def-input';
+    defInput.value = definition;
+    defInput.required = true;
+    defInput.rows = 1;
+    defInput.style.resize = 'none';
+    defInput.style.overflowY = 'hidden';
+    defInput.oninput = function() {
+        this.style.height = 'auto';
+        this.style.height = this.scrollHeight + 'px';
+    };
+    
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'btn-delete-row';
+    deleteBtn.innerHTML = '✕';
+    deleteBtn.onclick = function() {
+        rowEl.remove();
+        // Keep at least 2 rows
+        const remaining = container.querySelectorAll('.card-row');
+        if (remaining.length < 2) {
+            addNewCardRow();
+        }
+    };
+    
+    rowEl.appendChild(termInput);
+    rowEl.appendChild(defInput);
+    rowEl.appendChild(deleteBtn);
+    container.appendChild(rowEl);
+    
+    // Auto-adjust height on initialization
+    setTimeout(() => {
+        termInput.style.height = 'auto';
+        termInput.style.height = termInput.scrollHeight + 'px';
+        defInput.style.height = 'auto';
+        defInput.style.height = defInput.scrollHeight + 'px';
+    }, 20);
+    
+    // Scroll to bottom
+    container.scrollTop = container.scrollHeight;
+}
+
+function handleSetFormSubmit(e) {
+    e.preventDefault();
+    
+    const editId = document.getElementById('edit-set-id').value;
+    const title = document.getElementById('set-title').value.trim();
+    const description = document.getElementById('set-description').value.trim();
+    
+    if (!title) return;
+    
+    const container = document.getElementById('set-cards-list-container');
+    if (!container) return;
+    
+    const rows = container.querySelectorAll('.card-row');
+    const cards = [];
+    
+    rows.forEach(row => {
+        const term = row.querySelector('.card-term-input').value.trim();
+        const def = row.querySelector('.card-def-input').value.trim();
+        
+        if (term && def) {
+            cards.push({
+                question: term,
+                answer: def
+            });
+        }
+    });
+    
+    if (cards.length < 2) {
+        alert("Please provide at least 2 terms and definitions, ribbit!");
+        return;
+    }
+    
+    let savedDecks = loadFlashcardSets();
+    
+    if (editId) {
+        // Edit Mode
+        const idx = savedDecks.findIndex(d => d.id === editId);
+        if (idx !== -1) {
+            savedDecks[idx].title = title;
+            savedDecks[idx].description = description;
+            savedDecks[idx].cards = cards;
+            savedDecks[idx].timestamp = new Date().toISOString();
+        }
+    } else {
+        // Create Mode
+        const newDeck = {
+            id: 'deck_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+            title: title,
+            description: description,
+            cards: cards,
+            timestamp: new Date().toISOString()
+        };
+        savedDecks.push(newDeck);
+    }
+    
+    localStorage.setItem('saved_flashcard_decks', JSON.stringify(savedDecks));
+    
+    // Refresh Library UI
+    showLibraryInPanel();
+    
+    // Close modal
+    closeAddSetModal();
+}
+
+window.openAddSetModal = openAddSetModal;
+window.closeAddSetModal = closeAddSetModal;
+window.addNewCardRow = addNewCardRow;
+window.handleSetFormSubmit = handleSetFormSubmit;
+
+// --- FLASHCARD LIBRARY UTILITY EXPORTS ---
+window.selectLibraryDeck = function(deckId) {
+    activeLibraryDeckId = deckId;
+    const searchInput = document.getElementById('library-deck-search');
+    const query = searchInput ? searchInput.value : '';
+    showLibraryInPanel(query);
+};
+
+window.handleLibrarySearch = function(query) {
+    showLibraryInPanel(query);
+};
+
+window.playMatchingFromLibrary = function(deckId) {
+    closeFlashcardsLibraryModal();
+    openGamesModal();
+    switchCozyArcadeGame('study');
+    const selectEl = document.getElementById('game-set-select');
+    if (selectEl) {
+        selectEl.value = deckId;
+    }
+    startMatchingGame();
+};
+
+window.playBlasterFromLibrary = function(deckId) {
+    closeFlashcardsLibraryModal();
+    openGamesModal();
+    switchCozyArcadeGame('study');
+    const selectEl = document.getElementById('game-set-select');
+    if (selectEl) {
+        selectEl.value = deckId;
+    }
+    setupBlasterGame();
+};

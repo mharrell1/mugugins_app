@@ -17,23 +17,23 @@ Welcome to **Froggy Pomodoro**, a cozy and aesthetic productivity web applicatio
 * **Urgency Levels:** Label tasks as **Low** 🟢, **Medium** 🟡, or **High** 🔴 urgency to identify priority items at a glance.
 * **Sorting & Filters:** Sort your list by due date (earliest/latest) or urgency (high/low first), and filter items by category.
 * **Persistent Storage:** Syncs automatically with the Flask backend or uses Guest Mode local storage.
-* **Interactive Completion:** Checking off a task spawns blooming cherry blossoms, accompanied by a happy croak from Lily.
+* **🌸 Spring Flower Completion:** Checking off a task displays a beautiful pink spring flower emoji (🌸) and soft matching pink border instead of a generic checkmark, accompanied by a happy croak from Lily.
 
-### 📅 3. Lily's Monthly Calendar (Left Panel Drawer!)
-* **Collapsible Slide-Out Panel:** Accessed via the 3-line hamburger menu (`☰`) or calendar icon (`📅`) in the left panel sidebar. Keeps the main dashboard focused and clean.
+### 📅 3. Lily's Monthly Calendar (Full-Page Split Workspace!)
+* **Full-Page Centered Overlay:** Opened via the calendar icon (`📅`) in the left panel sidebar. Takes up a large centered viewport overlay (92vw width, 90vh height).
 * **Month at a Glance:** View all tasks plotted on a month grid, complete with color-coded urgency flags.
+* **Click-to-Select Day Events:** Click any calendar day cell to instantly view all events/tasks scheduled for that day in the side inspector, and quickly check them off/complete them with 🌸 checkboxes directly in the sidebar list.
+* **Inline Custom Categories:** Directly type and add custom categories within the calendar quick-add form. Newly created categories are automatically saved and synced across all task selectors.
 * **Previous/Next Controls:** Seamlessly navigate between months using the left and right indicators.
-* **Click-to-Filter:** Click any calendar day cell to instantly filter your task list to only show items due on that date. Click again to clear the filter.
 * **Current Day Highlight:** Today's date is automatically highlighted with a cozy mint green border.
 * **Direct Add Calendar Items:** Easily add new events or tasks directly inside the calendar quick-add form.
-* **Click-Outside to Close:** Clicking the dark background overlay closes the drawer instantly for a distraction-free workflow.
 
-### 🎮 4. Cozy Game Arcade (Froggy 2048)
-* **Destress Mini-Games:** Accessed via the game controller icon (`🎮`) in the left panel sidebar.
-* **Froggy 2048 Theme:** Play a cozy themed version of the classic 2048 game using custom pastel colors (greens, yellows, oranges, reds) matching the app design, culminating in a special **"2048 🐸"** tile.
+### 🎮 4. Cozy Game Arcade & Study Games (Full-Page Playground!)
+* **Cozy Destress Games:** Accessed via the game controller icon (`🎮`) in the left panel sidebar. Takes up the full viewport window.
+* **Froggy 2048 Theme:** Play a cozy themed version of the classic 2048 game using custom pastel colors, culminating in a special **"2048 🐸"** tile.
+* **Matching Study Game:** Match terms and definitions from your selected deck side-by-side in a race against time! Cards automatically fade when matched.
+* **Asteroid Blaster Study Game:** Aim and blast arriving asteroids containing definitions by matching them with the correct term loaded on your blaster.
 * **Saves High Score:** Automatically saves your highest score locally (`bestScore2048` stored in `localStorage`).
-* **Desktop & Mobile Controls:** Move tiles using standard keyboard arrow keys on desktop (scroll-prevention handles overlay focus) or the dedicated on-screen arrow keys on mobile.
-* **Mascot Audio Integration:** Combines with Lily the mascot frog, playing a happy croaking sound whenever you reach the 2048 tile!
 
 ### 📻 5. Froggy Pond Radio (Spotify Integration)
 * **Curated Stations:** Quick-switch between four pre-configured ambient playlists (Lofi Focus Beats, Peaceful Piano, Nature Rain Sounds, and Nintendo & Chill).
@@ -49,12 +49,14 @@ Welcome to **Froggy Pomodoro**, a cozy and aesthetic productivity web applicatio
 * **Guest Mode Fallback**: If not logged in, the app operates in offline Guest Mode, securely storing your tasks in the browser's `localStorage`.
 * **Zero-Config Sync**: Once logged in, your progress is automatically saved to and retrieved from the Flask backend server.
 
-### 🤖 8. frogGPT AI Study Agent (Full-Screen Workspace!)
+### 🤖 8. frogGPT AI Study Agent & Study Decks (Full-Screen Workspace!)
 * **Personal Study Mascot:** Accessed via the robot/chat icon (`🤖`) in the left panel sidebar.
 * **Full-Screen Workspace with Three-Way Toggle:** A full-viewport layout equipped with a header toggle to customize your workspace:
   * **💬 Chat Only:** Focuses exclusively on your conversation with Lily for instruction and query inputs (100% width).
   * **📚 Materials Only:** Expands the interactive study playground (flashcards, quizzes, tests, study guides) to full-screen width for distraction-free learning.
   * **🔀 Split Screen:** Displays both the chat window and interactive materials side-by-side.
+* **📚 Two-Column Flashcard Library Explorer:** Lists all your decks in a clean left-side panel. Selecting a deck displays its title, description, term count, and lets you start a study session, or launch study games directly with that deck.
+* **✏️ Full-Page Flashcards Editor:** Create or edit custom decks inside a spacious modal layout with auto-resizing text fields for long concepts and definitions.
 * **Persistent Session History:**
   * If logged in, users can click **"📜 Session History"** to list, load, and resume past study conversations.
   * Users can click **"➕ New Chat"** to clear the conversation log and spin up a clean study session.

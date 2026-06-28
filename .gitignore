@@ -20,3 +20,6 @@ Thumbs.db
 # Scripts
 push_to_github.py
 
+# Local development profiles
+chrome_profile/
+
