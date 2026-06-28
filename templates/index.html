@@ -67,29 +67,29 @@
         </header>
 
         <!-- Mascot Stats Card (top of dashboard) -->
-        <section class="mascot-card" style="background: var(--panel-bg); border: 1px solid var(--panel-border); backdrop-filter: blur(12px); border-radius: 20px; padding: 16px 24px; display: grid; grid-template-columns: 2.5fr 1fr; gap: 20px; align-items: center; box-shadow: 0 8px 32px var(--color-shadow); margin-bottom: 8px;">
-            <div class="mascot-content" style="display: flex; align-items: center; gap: 16px;">
-                <div class="mascot-img-container" style="position: relative; width: 60px; height: 60px; flex-shrink: 0;">
-                    <img src="{{ url_for('static', filename='images/study_frog.jpg') }}" alt="Lily the Study Frog" class="mascot-img" id="lily-mascot" style="width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--color-sage); object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
-                    <div class="mascot-glow" style="position: absolute; top: -3px; left: -3px; right: -3px; bottom: -3px; border-radius: 50%; background: radial-gradient(circle, var(--color-mint) 0%, transparent 70%); opacity: 0.15; z-index: -1;"></div>
+        <section class="mascot-card">
+            <div class="mascot-content">
+                <div class="mascot-img-container">
+                    <img src="{{ url_for('static', filename='images/study_frog.jpg') }}" alt="Lily the Study Frog" class="mascot-img" id="lily-mascot">
+                    <div class="mascot-glow"></div>
                 </div>
-                <div class="speech-bubble" style="background: rgba(244, 235, 217, 0.95); color: #1a322b; padding: 10px 16px; border-radius: 14px; position: relative; font-size: 0.9rem; font-weight: 500; line-height: 1.4; box-shadow: 0 2px 8px rgba(0,0,0,0.1); width: 100%; text-align: left;">
-                    <div class="speech-arrow" style="content: ''; position: absolute; left: -8px; top: 20px; width: 0; height: 0; border-top: 8px solid transparent; border-bottom: 8px solid transparent; border-right: 8px solid rgba(244, 235, 217, 0.95);"></div>
+                <div class="speech-bubble">
+                    <div class="speech-arrow"></div>
                     <p id="mascot-message">Ribbit! Welcome back, study partner! Let's get tasks done and learn today!</p>
                 </div>
             </div>
-            <div class="pond-stats" style="display: flex; justify-content: space-around; border-left: 1px solid rgba(244, 235, 217, 0.15); padding-left: 16px;">
-                <div class="stat-box" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
-                    <span class="stat-val" id="stats-active" style="font-family: var(--font-heading); font-size: 1.6rem; font-weight: 700; color: var(--color-mint);">0</span>
-                    <span class="stat-lbl" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-dim); margin-top: 2px;">Active Tasks</span>
+            <div class="pond-stats">
+                <div class="stat-box">
+                    <span class="stat-val" id="stats-active">0</span>
+                    <span class="stat-lbl">Active Tasks</span>
                 </div>
-                <div class="stat-box" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
-                    <span class="stat-val" id="stats-urgent" style="font-family: var(--font-heading); font-size: 1.6rem; font-weight: 700; color: var(--color-mint);">0</span>
-                    <span class="stat-lbl" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-dim); margin-top: 2px;">High Urgency</span>
+                <div class="stat-box">
+                    <span class="stat-val" id="stats-urgent">0</span>
+                    <span class="stat-lbl">High Urgency</span>
                 </div>
-                <div class="stat-box" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
-                    <span class="stat-val" id="stats-completed" style="font-family: var(--font-heading); font-size: 1.6rem; font-weight: 700; color: var(--color-mint);">0%</span>
-                    <span class="stat-lbl" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-dim); margin-top: 2px;">Completed</span>
+                <div class="stat-box">
+                    <span class="stat-val" id="stats-completed">0%</span>
+                    <span class="stat-lbl">Completed</span>
                 </div>
             </div>
         </section>
@@ -187,27 +187,27 @@
             </section>
 
             <!-- Right Panel: Tasks List -->
-            <section class="panel tasks-panel" id="tasks-section" style="display: flex; flex-direction: column; height: 100%;">
-                <div class="panel-header" style="margin-bottom: 12px;">
+            <section class="panel tasks-panel" id="tasks-section">
+                <div class="panel-header">
                     <h2>📋 Tasks to Hop On</h2>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span class="task-stats" id="task-stats" style="font-size: 0.8rem; color: var(--color-text-dim);">0/0 completed</span>
-                        <button id="btn-open-add-task" class="btn btn-primary btn-sm" onclick="openAddTaskModal()" style="font-size: 0.8rem; padding: 4px 10px; border-radius: 8px;">
+                    <div class="tasks-header-actions">
+                        <span class="task-stats" id="task-stats">0/0 completed</span>
+                        <button id="btn-open-add-task" class="btn btn-primary btn-sm" onclick="openAddTaskModal()">
                             <span>Add Task</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- Filter and Sort Controls (from frog-study-app) -->
-                <div class="controls-bar" style="margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px;">
+                <div class="controls-bar">
                     <div class="search-box">
-                        <input type="text" id="task-search" placeholder="Search tasks..." autocomplete="off" oninput="filterAndSortTasks()" style="width: 100%; padding: 8px 12px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--panel-border); border-radius: 10px; color: var(--color-cream); font-family: var(--font-body); font-size: 0.85rem;">
+                        <input type="text" id="task-search" placeholder="Search tasks..." autocomplete="off" oninput="filterAndSortTasks()">
                     </div>
                     
-                    <div class="filters-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
-                        <div class="control-group" style="display: flex; flex-direction: column; gap: 2px;">
-                            <label for="filter-category" style="font-size: 0.65rem; font-weight: 700; color: var(--color-sage); text-transform: uppercase;">Category</label>
-                            <select id="filter-category" onchange="filterAndSortTasks()" style="padding: 6px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--panel-border); border-radius: 8px; color: var(--color-cream); font-size: 0.8rem; outline: none; cursor: pointer;">
+                    <div class="filters-grid">
+                        <div class="control-group">
+                            <label for="filter-category">Category</label>
+                            <select id="filter-category" onchange="filterAndSortTasks()">
                                 <option value="all">All</option>
                                 <option value="School">School</option>
                                 <option value="Work">Work</option>
@@ -215,9 +215,9 @@
                             </select>
                         </div>
 
-                        <div class="control-group" style="display: flex; flex-direction: column; gap: 2px;">
-                            <label for="filter-urgency" style="font-size: 0.65rem; font-weight: 700; color: var(--color-sage); text-transform: uppercase;">Urgency</label>
-                            <select id="filter-urgency" onchange="filterAndSortTasks()" style="padding: 6px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--panel-border); border-radius: 8px; color: var(--color-cream); font-size: 0.8rem; outline: none; cursor: pointer;">
+                        <div class="control-group">
+                            <label for="filter-urgency">Urgency</label>
+                            <select id="filter-urgency" onchange="filterAndSortTasks()">
                                 <option value="all">All</option>
                                 <option value="high">🔴 High</option>
                                 <option value="medium">🟡 Medium</option>
@@ -225,9 +225,9 @@
                             </select>
                         </div>
 
-                        <div class="control-group" style="display: flex; flex-direction: column; gap: 2px;">
-                            <label for="sort-tasks" style="font-size: 0.65rem; font-weight: 700; color: var(--color-sage); text-transform: uppercase;">Sort By</label>
-                            <select id="sort-tasks" onchange="filterAndSortTasks()" style="padding: 6px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--panel-border); border-radius: 8px; color: var(--color-cream); font-size: 0.8rem; outline: none; cursor: pointer;">
+                        <div class="control-group">
+                            <label for="sort-tasks">Sort By</label>
+                            <select id="sort-tasks" onchange="filterAndSortTasks()">
                                 <option value="dueDateAsc">Date (Asc)</option>
                                 <option value="dueDateDesc">Date (Desc)</option>
                                 <option value="urgencyDesc">Urgency (High)</option>

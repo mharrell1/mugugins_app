@@ -1413,6 +1413,7 @@ function updateAuthUI() {
     const authLoggedOut = document.getElementById('auth-logged-out');
     const authLoggedIn = document.getElementById('auth-logged-in');
     const loggedInUsername = document.getElementById('logged-in-username');
+    const btnHistory = document.getElementById('btn-froggpt-history');
 
     if (isLoggedIn && loggedInUser) {
         if (btnSync) btnSync.classList.add('active');
@@ -1420,11 +1421,13 @@ function updateAuthUI() {
         if (authLoggedOut) authLoggedOut.style.display = 'none';
         if (authLoggedIn) authLoggedIn.style.display = 'block';
         if (loggedInUsername) loggedInUsername.textContent = loggedInUser;
+        if (btnHistory) btnHistory.style.display = 'inline-block';
     } else {
         if (btnSync) btnSync.classList.remove('active');
         if (syncStatusText) syncStatusText.textContent = 'Sign In';
         if (authLoggedOut) authLoggedOut.style.display = 'block';
         if (authLoggedIn) authLoggedIn.style.display = 'none';
+        if (btnHistory) btnHistory.style.display = 'none';
     }
 }
 

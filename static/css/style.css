@@ -3392,3 +3392,307 @@ input[type=number] {
     z-index: 2000;
 }
 
+/* --- Mascot Card & Stats & Controls Styling (Extracted from HTML inline styles) --- */
+.mascot-card {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    backdrop-filter: blur(12px);
+    border-radius: 20px;
+    padding: 16px 24px;
+    display: grid;
+    grid-template-columns: 2.5fr 1fr;
+    gap: 20px;
+    align-items: center;
+    box-shadow: 0 8px 32px var(--color-shadow);
+    margin-bottom: 8px;
+}
+
+.mascot-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.mascot-img-container {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0;
+}
+
+.mascot-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid var(--color-sage);
+    object-fit: cover;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.mascot-glow {
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--color-mint) 0%, transparent 70%);
+    opacity: 0.15;
+    z-index: -1;
+}
+
+.speech-bubble {
+    background: rgba(244, 235, 217, 0.95);
+    color: #1a322b;
+    padding: 10px 16px;
+    border-radius: 14px;
+    position: relative;
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1.4;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    width: 100%;
+    text-align: left;
+}
+
+.speech-arrow {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 20px;
+    width: 0;
+    height: 0;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-right: 8px solid rgba(244, 235, 217, 0.95);
+}
+
+.pond-stats {
+    display: flex;
+    justify-content: space-around;
+    border-left: 1px solid rgba(244, 235, 217, 0.15);
+    padding-left: 16px;
+}
+
+.stat-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.stat-val {
+    font-family: var(--font-heading);
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--color-mint);
+}
+
+.stat-lbl {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--color-text-dim);
+    margin-top: 2px;
+}
+
+/* Tasks Panel & Controls layout classes */
+.tasks-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.tasks-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tasks-header-actions .task-stats {
+    font-size: 0.8rem;
+    color: var(--color-text-dim);
+}
+
+.controls-bar {
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding-bottom: 12px;
+}
+
+.controls-bar .search-box input {
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    color: var(--color-cream);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.control-group label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--color-sage);
+    text-transform: uppercase;
+}
+
+.control-group select {
+    padding: 6px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    color: var(--color-cream);
+    font-size: 0.8rem;
+    outline: none;
+    cursor: pointer;
+}
+
+/* Consolidated Responsiveness & Cross-Device Consistencies */
+
+/* Tablet & Smaller Layouts */
+@media (max-width: 1024px) {
+    .mascot-card {
+        grid-template-columns: 1fr;
+        padding: 16px;
+    }
+    
+    .pond-stats {
+        border-left: none;
+        border-top: 1px solid rgba(244, 235, 217, 0.15);
+        padding-left: 0;
+        padding-top: 16px;
+        margin-top: 8px;
+    }
+    
+    .panel {
+        min-height: auto !important; /* Stacked panels shouldn't force vertical space */
+    }
+}
+
+/* Mobile Portrait & Small Screens */
+@media (max-width: 600px) {
+    body {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+        padding-top: 16px !important;
+        padding-bottom: 76px !important; /* Gutter to prevent bottom bar overlapping content */
+    }
+    
+    /* Transform left sidebar to bottom navigation bar on mobile */
+    .app-sidebar {
+        top: auto;
+        bottom: 0;
+        width: 100vw;
+        height: 60px;
+        flex-direction: row;
+        border-right: none;
+        border-top: 1px solid var(--panel-border);
+        padding: 0 16px;
+        justify-content: space-around;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    .sidebar-top, .sidebar-bottom {
+        display: none !important;
+    }
+    
+    .sidebar-middle {
+        flex-direction: row;
+        justify-content: space-around;
+        gap: 0;
+    }
+    
+    /* Mascot section stacking */
+    .mascot-content {
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .speech-bubble {
+        text-align: center;
+    }
+    
+    .speech-arrow {
+        left: 50%;
+        top: -8px;
+        transform: translateX(-50%);
+        border-left: 8px solid transparent;
+        border-right: 8px solid transparent;
+        border-bottom: 8px solid rgba(244, 235, 217, 0.95);
+        border-top: none;
+    }
+    
+    /* Filter Grid layout wrapping */
+    .filters-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    /* Calendar Modal Stack */
+    .calendar-modal-body {
+        flex-direction: column !important;
+        overflow-y: auto !important;
+        gap: 16px !important;
+    }
+    
+    .calendar-quick-add-panel {
+        width: 100% !important;
+        flex-shrink: unset !important;
+    }
+    
+    .calendar-modal-content {
+        height: 95vh !important;
+        max-height: 95vh !important;
+        padding: 16px !important;
+    }
+    
+    #calendar-days-grid {
+        grid-template-rows: repeat(6, minmax(40px, 1fr)) !important;
+        min-height: 280px;
+    }
+    
+    /* frogGPT AI Agent Layout Stack Fixes */
+    .froggpt-modal-body.tab-split .froggpt-chat-column,
+    .froggpt-modal-body.tab-split .froggpt-study-column {
+        width: 100% !important;
+        height: 480px !important;
+        max-height: none !important;
+        flex: none !important;
+    }
+    
+    .froggpt-modal-body.tab-chat .froggpt-chat-column,
+    .froggpt-modal-body.tab-materials .froggpt-study-column {
+        width: 100% !important;
+        height: 100% !important;
+        max-height: none !important;
+        flex: 1 !important;
+    }
+}
+
+/* Touch screen sticky hover optimization */
+@media (hover: none) {
+    .btn:hover, .btn-sidebar-item:hover, .panel:hover {
+        transform: none !important;
+        box-shadow: none !important;
+    }
+}
+
+
