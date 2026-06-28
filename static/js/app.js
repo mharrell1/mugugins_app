@@ -2766,11 +2766,14 @@ function showLibraryInPanel(searchQuery = '') {
         items = loadSavedTests();
     } else if (currentLibraryTab === 'guides') {
         items = loadSavedGuides();
+    } else if (currentLibraryTab === 'notes') {
+        items = loadSavedNotes();
     }
 
     const filteredItems = items.filter(item => 
         (item.title && item.title.toLowerCase().includes(searchQuery.toLowerCase())) || 
-        (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
+        (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (item.notes && item.notes.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
     if (filteredItems.length > 0) {
@@ -2781,13 +2784,14 @@ function showLibraryInPanel(searchQuery = '') {
         activeLibraryItemId = null;
     }
 
-    // Tabs HTML
+    // Tabs HTML (5 columns)
     const tabsHTML = `
-        <div class="library-tabs" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px;">
-            <button class="tab-btn btn-sm" onclick="setLibraryTab('flashcards')" style="padding: 6px; font-size: 0.72rem; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; color: ${currentLibraryTab === 'flashcards' ? '#fff' : 'var(--color-text-dim)'}; background: ${currentLibraryTab === 'flashcards' ? 'var(--color-sage)' : 'none'};">📇 Cards</button>
-            <button class="tab-btn btn-sm" onclick="setLibraryTab('quizzes')" style="padding: 6px; font-size: 0.72rem; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; color: ${currentLibraryTab === 'quizzes' ? '#fff' : 'var(--color-text-dim)'}; background: ${currentLibraryTab === 'quizzes' ? 'var(--color-sage)' : 'none'};">📝 Quizzes</button>
-            <button class="tab-btn btn-sm" onclick="setLibraryTab('tests')" style="padding: 6px; font-size: 0.72rem; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; color: ${currentLibraryTab === 'tests' ? '#fff' : 'var(--color-text-dim)'}; background: ${currentLibraryTab === 'tests' ? 'var(--color-sage)' : 'none'};">✍️ Tests</button>
-            <button class="tab-btn btn-sm" onclick="setLibraryTab('guides')" style="padding: 6px; font-size: 0.72rem; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; color: ${currentLibraryTab === 'guides' ? '#fff' : 'var(--color-text-dim)'}; background: ${currentLibraryTab === 'guides' ? 'var(--color-sage)' : 'none'};">📚 Guides</button>
+        <div class="library-tabs" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-top: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px;">
+            <button class="tab-btn btn-sm" onclick="setLibraryTab('flashcards')" style="padding: 6px 2px; font-size: 0.7rem; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; color: ${currentLibraryTab === 'flashcards' ? '#fff' : 'var(--color-text-dim)'}; background: ${currentLibraryTab === 'flashcards' ? 'var(--color-sage)' : 'none'};">📇 Cards</button>
+            <button class="tab-btn btn-sm" onclick="setLibraryTab('quizzes')" style="padding: 6px 2px; font-size: 0.7rem; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; color: ${currentLibraryTab === 'quizzes' ? '#fff' : 'var(--color-text-dim)'}; background: ${currentLibraryTab === 'quizzes' ? 'var(--color-sage)' : 'none'};">📝 Quiz</button>
+            <button class="tab-btn btn-sm" onclick="setLibraryTab('tests')" style="padding: 6px 2px; font-size: 0.7rem; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; color: ${currentLibraryTab === 'tests' ? '#fff' : 'var(--color-text-dim)'}; background: ${currentLibraryTab === 'tests' ? 'var(--color-sage)' : 'none'};">✍️ Test</button>
+            <button class="tab-btn btn-sm" onclick="setLibraryTab('guides')" style="padding: 6px 2px; font-size: 0.7rem; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; color: ${currentLibraryTab === 'guides' ? '#fff' : 'var(--color-text-dim)'}; background: ${currentLibraryTab === 'guides' ? 'var(--color-sage)' : 'none'};">📚 Guide</button>
+            <button class="tab-btn btn-sm" onclick="setLibraryTab('notes')" style="padding: 6px 2px; font-size: 0.7rem; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; color: ${currentLibraryTab === 'notes' ? '#fff' : 'var(--color-text-dim)'}; background: ${currentLibraryTab === 'notes' ? 'var(--color-sage)' : 'none'};">📓 Notes</button>
         </div>
     `;
 
@@ -2820,11 +2824,13 @@ function showLibraryInPanel(searchQuery = '') {
                 infoText = `${totalQ} Questions`;
             } else if (currentLibraryTab === 'guides') {
                 infoText = `${(item.sections || []).length} Sections`;
+            } else if (currentLibraryTab === 'notes') {
+                infoText = item.type === 'meeting' ? '👥 Meeting Note' : '🎓 Lecture Outline';
             }
 
             leftHTML += `
                 <div class="library-set-item ${isSelected ? 'selected' : ''}" onclick="selectLibraryItem('${item.id}')">
-                    <h4>${escapeHTML(item.title)}</h4>
+                    <h4 style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 170px;">${escapeHTML(item.title)}</h4>
                     <p>${infoText}</p>
                 </div>
             `;
@@ -2846,6 +2852,7 @@ function showLibraryInPanel(searchQuery = '') {
         else if (currentLibraryTab === 'quizzes') typeLabel = 'Quiz';
         else if (currentLibraryTab === 'tests') typeLabel = 'Practice Test';
         else if (currentLibraryTab === 'guides') typeLabel = 'Study Guide';
+        else if (currentLibraryTab === 'notes') typeLabel = 'Past Notes';
 
         rightHTML += `
             <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; flex-grow:1; text-align:center; color:var(--color-text-dim); padding:40px 20px;">
@@ -2909,6 +2916,14 @@ function showLibraryInPanel(searchQuery = '') {
                 </div>
                 <div id="library-interactive-container" style="flex-grow:1; overflow-y:auto; padding-right:4px;"></div>
             `;
+        } else if (currentLibraryTab === 'notes') {
+            rightHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px; margin-bottom: 12px; flex-shrink: 0;">
+                    <h3 style="color:var(--color-cream); font-family:var(--font-heading); font-size:1.25rem; margin:0; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 320px;">📓 ${escapeHTML(item.title)}</h3>
+                    <button class="btn btn-secondary btn-sm" onclick="deleteNoteInPanel('${item.id}')" style="background:rgba(200, 70, 70, 0.15); border:1px solid rgba(200, 70, 70, 0.3); color:#f7a3a3; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:4px;">🗑️ Delete</button>
+                </div>
+                <div id="library-interactive-container" style="flex-grow:1; overflow-y:auto; padding-right:4px; text-align: left;"></div>
+            `;
         }
     }
 
@@ -2952,6 +2967,47 @@ function showLibraryInPanel(searchQuery = '') {
                 renderPracticeTest(subContainer, item, true);
             } else if (currentLibraryTab === 'guides') {
                 renderStudyGuide(subContainer, item, true);
+            } else if (currentLibraryTab === 'notes') {
+                // Parse markdown summary
+                let noteHTML = '';
+                if (typeof marked !== 'undefined') {
+                    noteHTML = marked.parse(item.notes);
+                } else {
+                    noteHTML = `<pre style="white-space: pre-wrap; font-family: inherit;">${escapeHTML(item.notes)}</pre>`;
+                }
+                
+                subContainer.innerHTML = `
+                    <div style="line-height:1.5; color:var(--color-cream); font-size:0.85rem;">
+                        ${noteHTML}
+                        
+                        <div class="study-actions-box" style="margin-top: 15px; padding: 12px; background: rgba(135,195,143,0.06); border: 1px solid rgba(135,195,143,0.15); border-radius: 12px; text-align: left;">
+                            <div style="font-weight: bold; color: var(--color-mint); font-size: 0.85rem; margin-bottom: 8px;">🎓 Study & Practice with these Notes</div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <button class="btn btn-primary btn-sm" onclick="studyNotesWithFrogGPT('${item.id}', 'flashcards')" style="background: var(--color-sage); border: none; color: #fff; padding: 6px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; cursor: pointer;">📇 Make Flashcards</button>
+                                <button class="btn btn-primary btn-sm" onclick="studyNotesWithFrogGPT('${item.id}', 'quiz')" style="background: var(--color-sage); border: none; color: #fff; padding: 6px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; cursor: pointer;">📝 Make Quiz</button>
+                                <button class="btn btn-primary btn-sm" onclick="studyNotesWithFrogGPT('${item.id}', 'test')" style="background: var(--color-sage); border: none; color: #fff; padding: 6px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; cursor: pointer;">✍️ Make Test</button>
+                                <button class="btn btn-primary btn-sm" onclick="studyNotesWithFrogGPT('${item.id}', 'guide')" style="background: var(--color-sage); border: none; color: #fff; padding: 6px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; cursor: pointer;">📚 Make Guide</button>
+                            </div>
+                            <button class="btn btn-primary btn-sm" onclick="studyNotesWithFrogGPT('${item.id}', 'chat')" style="width: 100%; margin-top: 8px; background: var(--color-mint); border: none; color: var(--bg-dark); padding: 8px; border-radius: 8px; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">🤖 Ask frogGPT Questions about this Note</button>
+                        </div>
+                        
+                        <details style="margin-top: 15px; background: rgba(0,0,0,0.15); border: 1px solid var(--panel-border); border-radius: 8px; padding: 10px;">
+                            <summary style="font-size: 0.8rem; font-weight: bold; color: var(--color-sage); cursor: pointer; outline: none; user-select: none;">📝 View Original Transcript</summary>
+                            <p style="font-size: 0.8rem; color: var(--color-cream); margin-top: 6px; white-space: pre-wrap; line-height: 1.4; max-height: 150px; overflow-y: auto;">${escapeHTML(item.transcript)}</p>
+                        </details>
+                        
+                        <div style="display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,0.1); border: 1px solid var(--panel-border); border-radius: 12px; padding: 12px; margin-top: 15px;">
+                            <div style="flex: 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--color-sage); text-transform: uppercase;">Export Format</label>
+                                <select id="library-export-format" style="width: 100%; padding: 6px; background: rgba(0,0,0,0.2); border: 1px solid var(--panel-border); border-radius: 8px; color: var(--color-cream); font-size: 0.8rem; cursor: pointer; outline: none;">
+                                    <option value="pdf" selected>📄 PDF Document (.pdf)</option>
+                                    <option value="docx">📝 Word Document (.docx)</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" onclick="exportNoteFromLibrary('${item.id}', event)" style="background: var(--color-mint); border: none; color: var(--bg-dark); font-weight: bold; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; align-self: flex-end;">📥 Export File</button>
+                        </div>
+                    </div>
+                `;
             }
         }
     }
@@ -4569,6 +4625,56 @@ window.exportNoteFromLibrary = async function(noteId, event) {
     }
 };
 
+window.studyNotesWithFrogGPT = function(noteId, action) {
+    const notesList = loadSavedNotes();
+    const note = notesList.find(n => n.id === noteId);
+    if (!note) {
+        // Fallback: check if we are studying the active note agents preview before saving
+        if (noteId === 'active' && generatedNotesMarkdown) {
+            const filenameInput = document.getElementById('note-filename');
+            const tempNote = {
+                title: filenameInput && filenameInput.value ? filenameInput.value : 'Active Audio Summary',
+                notes: generatedNotesMarkdown
+            };
+            triggerAction(tempNote);
+        } else {
+            alert("No active notes found to study!");
+        }
+        return;
+    }
+    triggerAction(note);
+
+    function triggerAction(targetNote) {
+        let promptText = '';
+        if (action === 'flashcards') {
+            promptText = `Create a set of flashcards based on these notes: "${targetNote.title}"\n\nNotes Content:\n${targetNote.notes}`;
+        } else if (action === 'quiz') {
+            promptText = `Create a quiz based on these notes: "${targetNote.title}"\n\nNotes Content:\n${targetNote.notes}`;
+        } else if (action === 'test') {
+            promptText = `Create a practice test based on these notes: "${targetNote.title}"\n\nNotes Content:\n${targetNote.notes}`;
+        } else if (action === 'guide') {
+            promptText = `Create a comprehensive study guide based on these notes: "${targetNote.title}"\n\nNotes Content:\n${targetNote.notes}`;
+        } else if (action === 'chat') {
+            promptText = `I have some questions about these notes: "${targetNote.title}"\n\nNotes Content:\n${targetNote.notes}\n\nPlease read them and let me know if you are ready to answer my questions!`;
+        }
+
+        // Close modal
+        closeNoteAgentModal();
+
+        // Close Library view inside frogGPT if open
+        showStudyPanelPlaceholder();
+
+        // Open frogGPT chat
+        openFrogGPTModal();
+        switchFrogGPTTab('chat');
+
+        // Submit prompt
+        setTimeout(() => {
+            handleQuickPrompt(promptText);
+        }, 300);
+    }
+};
+
 // Cozy Arcade Tab Switcher
 window.switchCozyArcadeGame = function(gameType) {
     document.querySelectorAll('.games-tabs-bar .panel-tab-btn').forEach(btn => {
@@ -5115,7 +5221,19 @@ async function summarizeTranscript() {
                     html = `<pre style="white-space: pre-wrap; font-family: inherit;">${escapeHTML(data.notes)}</pre>`;
                 }
                 
-                if (previewContainer) previewContainer.innerHTML = html;
+                const studyActionsHTML = `
+                    <div class="study-actions-box" style="margin-top: 15px; padding: 12px; background: rgba(135,195,143,0.06); border: 1px solid rgba(135,195,143,0.15); border-radius: 12px; text-align: left;">
+                        <div style="font-weight: bold; color: var(--color-mint); font-size: 0.85rem; margin-bottom: 8px;">🎓 Study & Practice with these Notes</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <button class="btn btn-primary btn-sm" onclick="studyNotesWithFrogGPT('active', 'flashcards')" style="background: var(--color-sage); border: none; color: #fff; padding: 6px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; cursor: pointer;">📇 Make Flashcards</button>
+                            <button class="btn btn-primary btn-sm" onclick="studyNotesWithFrogGPT('active', 'quiz')" style="background: var(--color-sage); border: none; color: #fff; padding: 6px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; cursor: pointer;">📝 Make Quiz</button>
+                            <button class="btn btn-primary btn-sm" onclick="studyNotesWithFrogGPT('active', 'test')" style="background: var(--color-sage); border: none; color: #fff; padding: 6px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; cursor: pointer;">✍️ Make Test</button>
+                            <button class="btn btn-primary btn-sm" onclick="studyNotesWithFrogGPT('active', 'guide')" style="background: var(--color-sage); border: none; color: #fff; padding: 6px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; cursor: pointer;">📚 Make Guide</button>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="studyNotesWithFrogGPT('active', 'chat')" style="width: 100%; margin-top: 8px; background: var(--color-mint); border: none; color: var(--bg-dark); padding: 8px; border-radius: 8px; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">🤖 Ask frogGPT Questions about this Note</button>
+                    </div>
+                `;
+                if (previewContainer) previewContainer.innerHTML = html + studyActionsHTML;
                 
                 // Set default generic filename based on type and timestamp
                 const filenameInput = document.getElementById('note-filename');
