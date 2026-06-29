@@ -912,7 +912,12 @@ def import_video_link():
                             os.remove(filename)
                 except Exception as dl_err:
                     print(f"yt-dlp fallback failed: {dl_err}")
-                    return jsonify({'error': f'Could not retrieve transcript for this YouTube video. Transcripts are disabled, and direct audio extraction failed. Error: {str(yt_err)}'}), 400
+                    return jsonify({'error': (
+                        'YouTube blocks Google Cloud datacenter IP addresses from extracting transcripts or downloading streams. '
+                        'To import YouTube videos, please either:\n\n'
+                        '1. Run this app locally on your machine (where YouTube does not block your residential IP, allowing transcripts to import instantly), or\n'
+                        '2. Download the audio file of the video using a free tool and upload it here using the "Upload Local Audio File" button.'
+                    )}), 400
         
         else:
             headers = {"User-Agent": "Mozilla/5.0"}
