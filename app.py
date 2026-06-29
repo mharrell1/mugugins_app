@@ -861,24 +861,57 @@ def import_video_link():
                 return jsonify({'success': True, 'transcript': transcript})
             except Exception as yt_err:
                 print(f"youtube-transcript-api failed for {video_id}: {yt_err}")
-                # Fallback to Gemini with Google Search tool grounding if API fails
+                # Fallback: Download audio stream using yt-dlp and upload to Gemini
                 try:
-                    from google.genai import types
-                    prompt = (
-                        f"You are a transcription assistant. Search for and provide a detailed summary "
-                        f"or outline of the dialogue and content of the YouTube video with ID {video_id} at this URL: {url}"
-                    )
-                    response = genai_client.models.generate_content(
-                        model='gemini-2.5-flash',
-                        contents=prompt,
-                        config=types.GenerateContentConfig(
-                            tools=[types.Tool(google_search=types.GoogleSearch())]
+                    import yt_dlp
+                    import tempfile
+                    import glob
+                    
+                    temp_dir = tempfile.gettempdir()
+                    outtmpl = os.path.join(temp_dir, f'yt_{video_id}.%(ext)s')
+                    
+                    ydl_opts = {
+                        'format': 'bestaudio/best',
+                        'outtmpl': outtmpl,
+                        'quiet': True,
+                        'no_warnings': True,
+                    }
+                    
+                    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                        info = ydl.extract_info(url, download=True)
+                        filename = ydl.prepare_filename(info)
+                    
+                    if not os.path.exists(filename):
+                        matched_files = glob.glob(os.path.join(temp_dir, f'yt_{video_id}.*'))
+                        if matched_files:
+                            filename = matched_files[0]
+                        else:
+                            raise Exception("Downloaded audio file not found on disk.")
+
+                    try:
+                        media_file = genai_client.files.upload(file=filename)
+                        
+                        while media_file.state.name == "PROCESSING":
+                            time.sleep(1)
+                            media_file = genai_client.files.get(name=media_file.name)
+                        
+                        if media_file.state.name == "FAILED":
+                            raise Exception("Audio file processing failed on Gemini.")
+
+                        response = genai_client.models.generate_content(
+                            model='gemini-2.5-flash',
+                            contents=[media_file, "Please transcribe the audio/dialogue in this video as accurately and completely as possible."]
                         )
-                    )
-                    transcript = response.text or ""
-                    return jsonify({'success': True, 'transcript': transcript})
-                except Exception as gemini_err:
-                    return jsonify({'error': f'Could not retrieve transcript for this YouTube video. Make sure captions/transcripts are enabled on YouTube. Error: {str(yt_err)}'}), 400
+                        transcript = response.text or ""
+                        
+                        genai_client.files.delete(name=media_file.name)
+                        return jsonify({'success': True, 'transcript': transcript})
+                    finally:
+                        if os.path.exists(filename):
+                            os.remove(filename)
+                except Exception as dl_err:
+                    print(f"yt-dlp fallback failed: {dl_err}")
+                    return jsonify({'error': f'Could not retrieve transcript for this YouTube video. Transcripts are disabled, and direct audio extraction failed. Error: {str(yt_err)}'}), 400
         
         else:
             headers = {"User-Agent": "Mozilla/5.0"}

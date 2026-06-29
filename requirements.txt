@@ -11,3 +11,5 @@ beautifulsoup4>=4.15.0
 lxml>=6.1.1
 youtube-transcript-api>=1.2.4
 pypdf>=5.0.0
+yt-dlp>=2025.1.15
+
