@@ -856,8 +856,9 @@ def import_video_link():
             # 2. Fetch transcript via youtube-transcript-api
             from youtube_transcript_api import YouTubeTranscriptApi
             try:
-                transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=['en', 'es', 'fr', 'de', 'it', 'ja', 'ko'])
-                transcript = "\n".join([t['text'] for t in transcript_list])
+                api = YouTubeTranscriptApi()
+                transcript_list = api.fetch(video_id, languages=['en', 'es', 'fr', 'de', 'it', 'ja', 'ko'])
+                transcript = "\n".join([getattr(t, 'text', '') for t in transcript_list])
                 return jsonify({'success': True, 'transcript': transcript})
             except Exception as yt_err:
                 print(f"youtube-transcript-api failed for {video_id}: {yt_err}")
