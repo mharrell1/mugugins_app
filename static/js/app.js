@@ -5195,8 +5195,9 @@ async function summarizeTranscript() {
         previewContainer.innerHTML = '<span style="color: var(--color-mint); font-style: italic;">🐸 Lily is analyzing your notes and formatting them... Please hold on!</span>';
     }
     
+    let res;
     try {
-        const res = await fetch('/api/notes/summarize', {
+        res = await fetch('/api/notes/summarize', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -5204,19 +5205,50 @@ async function summarizeTranscript() {
                 type: noteType
             })
         });
-        
-        if (res.ok) {
-            const data = await res.json();
-            if (data.success && data.notes) {
+    } catch (e) {
+        console.error("Network error fetching summary:", e);
+        if (previewContainer) previewContainer.innerHTML = '<span style="color: #ff595e;">Error connecting to server.</span>';
+        alert("❌ Error connecting to summary server. Please check your internet connection.");
+        btn.innerHTML = originalText;
+        btn.removeAttribute('disabled');
+        btn.style.cursor = 'pointer';
+        return;
+    }
+
+    if (res.ok) {
+        let data;
+        try {
+            data = await res.json();
+        } catch (e) {
+            console.error("JSON parse error:", e);
+            if (previewContainer) previewContainer.innerHTML = '<span style="color: #ff595e;">Failed to parse response.</span>';
+            alert("❌ Summary failed: Server returned an invalid response.");
+            btn.innerHTML = originalText;
+            btn.removeAttribute('disabled');
+            btn.style.cursor = 'pointer';
+            return;
+        }
+
+        if (data.success && data.notes) {
+            try {
                 // Increment quota count
-                incrementQueryCount();
+                try {
+                    incrementQueryCount();
+                } catch(e) {
+                    console.error("incrementQueryCount failed:", e);
+                }
                 
                 generatedNotesMarkdown = data.notes;
                 
                 // Parse markdown preview
                 let html = '';
                 if (typeof marked !== 'undefined') {
-                    html = marked.parse(data.notes);
+                    try {
+                        html = marked.parse(data.notes);
+                    } catch(markedErr) {
+                        console.error("marked.parse failed:", markedErr);
+                        html = `<pre style="white-space: pre-wrap; font-family: inherit;">${escapeHTML(data.notes)}</pre>`;
+                    }
                 } else {
                     html = `<pre style="white-space: pre-wrap; font-family: inherit;">${escapeHTML(data.notes)}</pre>`;
                 }
@@ -5247,33 +5279,36 @@ async function summarizeTranscript() {
                 }
                 
                 // Save to study materials notes list
-                saveNoteToLocalStorage({
-                    title: displayTitle,
-                    type: noteType,
-                    transcript: textarea.value.trim(),
-                    notes: data.notes
-                });
+                try {
+                    saveNoteToLocalStorage({
+                        title: displayTitle,
+                        type: noteType,
+                        transcript: textarea.value.trim(),
+                        notes: data.notes
+                    });
+                } catch(lsErr) {
+                    console.warn("Could not save to localStorage (quota or block limit reached):", lsErr);
+                }
 
                 enableExportBtn(true);
-                alert("✨ Summary generated and saved to your Study Library successfully!");
-            } else {
-                if (previewContainer) previewContainer.innerHTML = '<span style="color: #ff595e;">Failed to generate notes.</span>';
-                alert("❌ Summary failed: " + (data.error || "Unknown error"));
+                alert("✨ Summary generated successfully!");
+            } catch(renderErr) {
+                console.error("Rendering error:", renderErr);
+                alert("❌ Render error: Failed to display the generated summary.");
             }
         } else {
-            const errData = await res.json().catch(() => ({}));
             if (previewContainer) previewContainer.innerHTML = '<span style="color: #ff595e;">Failed to generate notes.</span>';
-            alert("❌ Summary failed: " + (errData.error || res.statusText));
+            alert("❌ Summary failed: " + (data.error || "Unknown error"));
         }
-    } catch (e) {
-        console.error("Summarization error:", e);
-        if (previewContainer) previewContainer.innerHTML = '<span style="color: #ff595e;">Error generating notes.</span>';
-        alert("❌ Error connecting to summary server.");
-    } finally {
-        btn.innerHTML = originalText;
-        btn.removeAttribute('disabled');
-        btn.style.cursor = 'pointer';
+    } else {
+        const errData = await res.json().catch(() => ({}));
+        if (previewContainer) previewContainer.innerHTML = '<span style="color: #ff595e;">Failed to generate notes.</span>';
+        alert("❌ Summary failed: " + (errData.error || res.statusText));
     }
+
+    btn.innerHTML = originalText;
+    btn.removeAttribute('disabled');
+    btn.style.cursor = 'pointer';
 }
 
 function enableExportBtn(enabled) {
