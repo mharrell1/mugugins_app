@@ -3047,6 +3047,47 @@ input[type=number] {
     animation: shakeCard 0.4s ease-in-out;
 }
 
+#matching-grid-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 12px;
+    width: 100%;
+    flex-grow: 1;
+    min-height: 0;
+}
+
+@media (max-width: 768px) {
+    #matching-grid-container {
+        gap: 8px;
+    }
+    .matching-card {
+        padding: 8px 10px;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 600px) {
+    #matching-grid-container {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(6, 1fr);
+        gap: 6px;
+    }
+    .games-modal-content {
+        padding: 12px !important;
+    }
+    .matching-card {
+        padding: 6px 8px;
+        font-size: 0.78rem;
+    }
+    .blaster-target {
+        max-width: 100px;
+        font-size: 0.75rem;
+        padding: 4px 8px;
+        border-radius: 12px;
+    }
+}
+
 @keyframes fadeMatchOut {
     0% {
         transform: scale(1);
