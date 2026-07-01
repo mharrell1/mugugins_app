@@ -759,14 +759,15 @@ input[type=number] {
 
 .todo-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    background: rgba(0, 0, 0, 0.1);
-    padding: 12px 16px;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 12px;
     border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     animation: slideIn 0.3s ease;
-    transition: opacity 0.3s ease, transform 0.2s ease;
+    transition: all 0.2s;
 }
 
 @keyframes slideIn {
@@ -3778,6 +3779,37 @@ input[type=number] {
     .spotify-url-input button {
         padding: 0 12px !important;
         font-size: 0.8rem !important;
+    }
+    
+    /* Spotify header and url input mobile stacking */
+    .spotify-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+    }
+    .spotify-title-group {
+        justify-content: center !important;
+    }
+    .spotify-url-input {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* Todo item list card mobile stacking */
+    .todo-item {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
+    .todo-item-left {
+        width: 100% !important;
+    }
+    .task-actions {
+        width: 100% !important;
+        justify-content: flex-end !important;
+        border-top: 1px solid rgba(255,255,255,0.05) !important;
+        padding-top: 8px !important;
+        margin-top: 4px !important;
     }
 }
 

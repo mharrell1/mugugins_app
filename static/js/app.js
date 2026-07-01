@@ -588,14 +588,6 @@ function renderTasks(tasks) {
 
         const li = document.createElement('li');
         li.className = `todo-item ${task.completed ? 'completed' : ''}`;
-        li.style.display = 'flex';
-        li.style.alignItems = 'flex-start';
-        li.style.gap = '12px';
-        li.style.padding = '12px';
-        li.style.background = 'rgba(255,255,255,0.02)';
-        li.style.border = '1px solid rgba(255,255,255,0.05)';
-        li.style.borderRadius = '14px';
-        li.style.transition = 'all 0.2s';
         
         const catColor = getCategoryColor(task.category || 'School');
         const formattedDate = task.due_date ? formatReadableDate(task.due_date) : 'No due date';
